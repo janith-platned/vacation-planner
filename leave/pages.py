@@ -74,8 +74,16 @@ def calendar_page(request):
     else:
         role, roles = user.resource_role, [user.resource_role]
 
-    year, month = _parse_month(request.GET.get("month"), services.today_for(team))
+    today = services.today_for(team)
+    year, month = _parse_month(request.GET.get("month"), today)
     first = dt.date(year, month, 1)
+
+    # Range selection books leave for the signed-in user, so it is only offered
+    # when they are looking at their own team and their own resource role.
+    can_book = bool(role is not None and user.team_id == team.id and user.resource_role_id == role.id)
+    leave_types = (
+        list(team.leave_types.filter(active=True, employee_bookable=True)) if can_book else []
+    )
     last = dt.date(year, month, calendar.monthrange(year, month)[1])
 
     weeks = []
@@ -99,6 +107,9 @@ def calendar_page(request):
             "prev_month": _shift_month(year, month, -1),
             "next_month": _shift_month(year, month, 1),
             "weekdays": ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
+            "today": today,
+            "can_book": can_book,
+            "leave_types": leave_types,
         },
     )
 

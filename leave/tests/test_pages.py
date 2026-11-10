@@ -139,6 +139,80 @@ def test_user_without_a_team_sees_guidance(client, db):
     assert "no team or resource role" in client.get(reverse("calendar")).content.decode()
 
 
+# ---- range selection on the calendar ---------------------------------------------- #
+def tag_for(body, date_iso):
+    """The opening <td ...> tag of one calendar day."""
+    import re
+
+    match = re.search(r'<td[^>]*data-date="%s"[^>]*>' % date_iso, body)
+    return match.group(0) if match else None
+
+
+def test_calendar_offers_range_selection_on_future_working_days(client, techs):
+    client.force_login(techs[0])
+    body = client.get(reverse("calendar"), {"month": "2026-12"}).content.decode()
+    assert "data-check-url" in body and 'id="range-form"' in body
+    assert "/static/leave/range_select.js" in body
+    assert "data-selectable" in tag_for(body, "2026-12-07")  # Monday
+    saturday = tag_for(body, "2026-12-05")
+    assert saturday is not None and "data-selectable" not in saturday  # known day, but not bookable
+
+
+def test_holidays_and_past_days_are_not_selectable(client, team, techs, monkeypatch):
+    from leave.models import Holiday
+
+    Holiday.objects.create(team=team, date=day(1), name="Team day")  # Tue 8 Dec
+    monkeypatch.setattr("leave.services.today_for", lambda t: day(2))  # today is Wed 9 Dec
+    client.force_login(techs[0])
+    body = client.get(reverse("calendar"), {"month": "2026-12"}).content.decode()
+    assert "data-selectable" not in tag_for(body, day(1).isoformat())  # holiday
+    assert "data-selectable" not in tag_for(body, day(0).isoformat())  # past
+    assert "data-selectable" in tag_for(body, day(2).isoformat())  # today is bookable
+
+
+def test_range_panel_lists_only_bookable_leave_types(client, team, techs, vacation):
+    from leave.models import LeaveType
+
+    LeaveType.objects.create(team=team, name="Compassionate", employee_bookable=False)
+    client.force_login(techs[0])
+    body = client.get(reverse("calendar"), {"month": "2026-12"}).content.decode()
+    panel = body.split('id="range-type"')[1].split("</select>")[0]
+    assert "Vacation" in panel and "Compassionate" not in panel
+
+
+def test_managers_viewing_a_team_cannot_book_from_the_grid(client, team, manager, techs):
+    client.force_login(manager)
+    body = client.get(reverse("calendar"), {"team": team.pk, "month": "2026-12"}).content.decode()
+    assert "data-check-url" not in body and 'id="range-form"' not in body
+
+
+def test_members_do_not_get_range_selection_on_a_role_that_is_not_theirs(client, roles, manager, techs, team):
+    from accounts.models import SystemRole
+
+    # A manager who also holds a Technical role only books when looking at that role.
+    manager.team, manager.resource_role = team, roles["Technical"]
+    manager.save()
+    client.force_login(manager)
+    own = client.get(reverse("calendar"), {"team": team.pk, "role": roles["Technical"].pk, "month": "2026-12"})
+    other = client.get(reverse("calendar"), {"team": team.pk, "role": roles["Systems"].pk, "month": "2026-12"})
+    assert "data-check-url" in own.content.decode()
+    assert "data-check-url" not in other.content.decode()
+    assert manager.system_role == SystemRole.MANAGER
+
+
+def test_dragged_range_over_a_weekend_books_only_the_working_days(client, techs, vacation):
+    client.force_login(techs[0])
+    response = client.post(
+        reverse("book-leave"),
+        {"leave_type": vacation.pk, "start_date": day(4).isoformat(), "end_date": day(7).isoformat()},  # Fri..Mon
+        follow=True,
+    )
+    assert "Leave booked and approved" in response.content.decode()
+    leave = LeaveRequest.objects.get(user=techs[0])
+    assert leave.working_days == 2
+    assert list(leave.days.order_by("date").values_list("date", flat=True)) == [day(4), day(7)]
+
+
 # ---- booking form ---------------------------------------------------------------- #
 def test_booking_form_creates_leave_and_redirects(client, team, techs, vacation):
     client.force_login(techs[0])

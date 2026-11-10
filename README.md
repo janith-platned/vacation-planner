@@ -4,7 +4,7 @@ Multi-user web app for booking and approving team leave. A booking is accepted o
 
 ## Status
 
-Specification complete. Built and tested: data model, floor check, booking, approval, cancellation, breach detection, anonymous calendar API, and the first screens (sign-in with forced password change, shared calendar, booking form with live floor check, My leave with cancel).
+Specification complete. Built and tested: data model, floor check, booking, approval, cancellation, breach detection, anonymous calendar API, and the first screens (sign-in with forced password change, shared calendar where you book leave by dragging across days, booking form with live floor check, My leave with cancel). Dragging over weekends and holidays skips them automatically; tap-first-day then tap-last-day and keyboard selection also work.
 
 Not built yet: manager screens (approvals, floors grid, breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 

@@ -1,0 +1,4 @@
+-r requirements-dev.txt
+# Optional: embedded PostgreSQL so the test suite (including the concurrency test)
+# runs on a machine without a Postgres install. See scripts/run_tests_local_pg.py.
+pgserver>=0.1.4

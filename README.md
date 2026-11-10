@@ -54,6 +54,24 @@ python scripts/run_tests_local_pg.py     # no PostgreSQL installed: uses an embe
 
 Without PostgreSQL the suite falls back to SQLite and skips the two concurrency tests. CI always runs them against PostgreSQL 16.
 
+## Demo data
+
+```
+python manage.py seed_demo
+```
+
+Creates two teams (Toronto, Montreal) managed by one manager, 12 members, floors for three months with a date override, and sample bookings including one pending request. Users: `admin` (administrator), `maya` (manager), `tom` and others (members). The password is `DEMO_PASSWORD` if set, otherwise `demo-pass-1234`. Demo only; never use it with real data or on a public host with the default password.
+
+## Deploy a free demo on Render
+
+`render.yaml` defines a free web service and a free PostgreSQL database. Render's free tier is for demos: the service sleeps after 15 minutes idle (first request is slow) and the free database expires after 30 days. Use demo data only; Render is not approved for real employee data.
+
+1. In Render choose **New > Blueprint**, connect this GitHub repo, and apply.
+2. Wait for the build. It installs, collects static files, migrates and runs `seed_demo`.
+3. Open the service URL. The shared demo password is the generated `DEMO_PASSWORD` value in the service's Environment tab.
+
+Configuration is by environment variable: `DATABASE_URL`, `DJANGO_SECRET_KEY`, `DJANGO_BEHIND_PROXY`, `DEMO_SEED`, `DEMO_PASSWORD` (see `render.yaml`).
+
 ## Stack
 
 Python/Django, PostgreSQL, HTMX, Azure hosting, GitHub Actions for CI/CD.

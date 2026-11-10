@@ -1,10 +1,11 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Calendar · Vacation Planner{% endblock %}
 {% block head %}
 <style>
   .cal { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
   .cal th { font-size: .85rem; color: var(--muted); font-weight: 600; text-align: left; padding: 2px 4px; }
-  .cal td { vertical-align: top; height: 92px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size: .8rem; background: var(--surface); }
+  .cal td { vertical-align: top; height: 92px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size: .8rem; background: var(--surface); position: relative; }
   .cal td .num { font-weight: 700; font-size: .95rem; }
   .cal td.ok { background: var(--ok); border-color: var(--ok-b); }
   .cal td.low { background: var(--low); border-color: var(--low-b); }
@@ -12,6 +13,13 @@
   .cal td.nofloor { background: var(--nofloor); }
   .cal td.off, .cal td.out { background: var(--off); color: var(--muted); }
   .cal td.out { opacity: .45; }
+  .cal[data-range-select] td[data-date] { user-select: none; -webkit-user-select: none; }
+  .cal td[data-selectable] { cursor: pointer; }
+  .cal td[data-selectable]:hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .cal td.sel { outline: 3px solid var(--accent); outline-offset: -3px; box-shadow: inset 0 0 0 999px rgba(29, 95, 209, .16); }
+  .cal td.sel::after { content: "Selected"; position: absolute; right: 6px; bottom: 4px; font-size: .7rem; font-weight: 700; color: var(--accent); }
+  .cal td.skip { background-image: repeating-linear-gradient(45deg, transparent 0 6px, rgba(128, 128, 128, .28) 6px 8px); }
+  .cal td.skip::after { content: "Skipped"; position: absolute; right: 6px; bottom: 4px; font-size: .7rem; color: var(--muted); }
   .badge { display: inline-block; margin-top: 4px; padding: 0 6px; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; font-size: .75rem; font-weight: 600; }
   .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 12px; }
   .toolbar form { display: flex; gap: 8px; align-items: center; margin: 0; }
@@ -19,6 +27,8 @@
   .tabs a { padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; margin-right: 4px; }
   .tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .85rem; color: var(--muted); margin-top: 12px; }
+  .range-panel { position: sticky; bottom: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); }
+  .range-panel[hidden] { display: none; }
   @media (max-width: 640px) { .cal td { height: 76px; font-size: .7rem; padding: 3px; } }
 </style>
 {% endblock %}
@@ -50,13 +60,16 @@
 </div>
 
 {% if role %}
-<table class="cal" aria-label="Team availability for {{ month_label }}">
+{% if can_book %}
+<p class="muted" id="range-hint">Click and drag across days to select your leave. On a touch screen, tap the first day and then the last day. Weekends, holidays and past days are skipped automatically.</p>
+{% endif %}
+<table class="cal" aria-label="Team availability for {{ month_label }}"{% if can_book %} data-range-select data-check-url="{% url 'booking-check' %}"{% endif %}>
   <thead><tr>{% for d in weekdays %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
   <tbody>
   {% for week in weeks %}
     <tr>
     {% for cell in week %}
-      <td class="{{ cell.level }}">
+      <td class="{{ cell.level }}"{% if can_book and cell.in_month %} data-date="{{ cell.date|date:'Y-m-d' }}"{% if cell.counts and cell.date >= today %} data-selectable="1" tabindex="0" role="button" aria-label="{{ cell.date|date:'l j F' }}: {{ cell.label }}"{% endif %}{% endif %}>
         <div class="num">{{ cell.date.day }}</div>
         {% if cell.in_month %}
           {% if cell.counts %}
@@ -72,12 +85,33 @@
   {% endfor %}
   </tbody>
 </table>
+
+{% if can_book %}
+<form id="range-form" method="post" action="{% url 'book-leave' %}" class="card range-panel" hidden>
+  {% csrf_token %}
+  <input type="hidden" name="start_date" id="range-start">
+  <input type="hidden" name="end_date" id="range-end">
+  <p id="range-summary" aria-live="polite"></p>
+  <label for="range-type">Leave type</label>
+  <select id="range-type" name="leave_type">
+    {% for lt in leave_types %}<option value="{{ lt.pk }}">{{ lt.name }}</option>{% endfor %}
+  </select>
+  <p id="range-check" class="muted" aria-live="polite"></p>
+  <p>
+    <button type="submit" id="range-submit">Book these days</button>
+    <button type="button" id="range-clear" class="secondary">Clear (Esc)</button>
+    <a class="button secondary" href="{% url 'book-leave' %}">Use the date form instead</a>
+  </p>
+</form>
+<script src="{% static 'leave/range_select.js' %}"></script>
+{% endif %}
+
 <div class="legend" aria-label="Legend">
   <span>"n of m off": colleagues in this role on leave (booked or pending) out of the role's headcount.</span>
   <span>Floor: minimum people who must stay available.</span>
   <span>Slots left: how many more people can book that day.</span>
 </div>
-<p style="margin-top:16px"><a class="button" href="{% url 'book-leave' %}">Book leave</a></p>
+{% if not can_book %}<p style="margin-top:16px"><a class="button" href="{% url 'book-leave' %}">Book leave</a></p>{% endif %}
 {% else %}
 <p class="card">This team has no active resource roles.</p>
 {% endif %}

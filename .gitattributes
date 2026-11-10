@@ -1,0 +1,2 @@
+# Shell scripts must keep Unix line endings or Render cannot run them.
+*.sh text eol=lf

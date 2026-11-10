@@ -7,7 +7,14 @@ from pathlib import Path
 
 from django.core.exceptions import ImproperlyConfigured
 
+from .dburl import database_from_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+
+def _env_list(name: str) -> list[str]:
+    return [item.strip() for item in os.environ.get(name, "").split(",") if item.strip()]
+
 
 DEBUG = os.environ.get("DJANGO_DEBUG") == "1"
 
@@ -18,7 +25,19 @@ if not SECRET_KEY:
     else:
         raise ImproperlyConfigured("Set DJANGO_SECRET_KEY (or DJANGO_DEBUG=1 for local development).")
 
-ALLOWED_HOSTS = [h.strip() for h in os.environ.get("DJANGO_ALLOWED_HOSTS", "").split(",") if h.strip()]
+ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS")
+CSRF_TRUSTED_ORIGINS = _env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+
+# Render sets this automatically for web services.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get("RENDER_EXTERNAL_HOSTNAME")
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+    CSRF_TRUSTED_ORIGINS.append(f"https://{RENDER_EXTERNAL_HOSTNAME}")
+
+# Behind a TLS-terminating proxy (Render, Azure): trust its X-Forwarded-Proto header.
+# Only enable where the proxy always sets it, otherwise clients could spoof HTTPS.
+if os.environ.get("DJANGO_BEHIND_PROXY") == "1":
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -33,6 +52,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -62,8 +82,11 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 # PostgreSQL is the target database (row locks power the atomic floor check).
-# SQLite is only a fallback for quick local work; the concurrency test is skipped on it.
-if os.environ.get("POSTGRES_DB"):
+# Order: DATABASE_URL (hosted), POSTGRES_* variables (CI, local), then SQLite as a
+# fallback for quick local work; the concurrency test is skipped on SQLite.
+if os.environ.get("DATABASE_URL"):
+    DATABASES = {"default": database_from_url(os.environ["DATABASE_URL"])}
+elif os.environ.get("POSTGRES_DB"):
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
@@ -101,6 +124,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+    # WhiteNoise serves the collected files, compressed and with cache-busting names.
+    "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+}
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

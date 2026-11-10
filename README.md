@@ -4,7 +4,11 @@ Multi-user web app for booking and approving team leave. A booking is accepted o
 
 ## Status
 
-Specification complete. The core is built and tested: data model, floor check, booking, approval, cancellation, breach detection and the anonymous calendar API. Screens (HTMX), manager settings UI, notifications, the administrator team filters and view-as are not built yet.
+Specification complete. Built and tested: data model, floor check, booking, approval, cancellation, breach detection, anonymous calendar API, and the first screens (sign-in with forced password change, shared calendar, booking form with live floor check, My leave with cancel).
+
+Not built yet: manager screens (approvals, floors grid, breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+
+Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 
 ## Key rules
 

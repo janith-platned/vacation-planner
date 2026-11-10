@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Book leave · Vacation Planner{% endblock %}
+{% block content %}
+<h1>Book leave</h1>
+
+{% if violations %}
+<div class="card warn" role="alert">
+  <strong>Your team can't cover these days.</strong> Booking would take your role below its minimum:
+  <ul>
+    {% for v in violations %}<li>{{ v.date|date:"D j M Y" }}: minimum {{ v.floor }} available, this would leave {{ v.available_after }}.</li>{% endfor %}
+  </ul>
+  Choose different dates, or check the <a href="{% url 'calendar' %}">calendar</a> for days with slots left.
+</div>
+{% endif %}
+
+<form method="post" id="book-form" class="card" style="max-width: 520px">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <label for="{{ form.leave_type.id_for_label }}">Leave type</label>
+  {{ form.leave_type }} {{ form.leave_type.errors }}
+  <label for="{{ form.start_date.id_for_label }}">First day</label>
+  {{ form.start_date }} {{ form.start_date.errors }}
+  <label for="{{ form.end_date.id_for_label }}">Last day</label>
+  {{ form.end_date }} {{ form.end_date.errors }}
+  <p id="check-result" class="muted" aria-live="polite"></p>
+  <p><button type="submit">Submit</button> <a class="button secondary" href="{% url 'calendar' %}">Cancel</a></p>
+</form>
+
+<script>
+(function () {
+  var form = document.getElementById('book-form');
+  var out = document.getElementById('check-result');
+  var url = "{% url 'booking-check' %}";
+  var timer = null;
+  function show(text, bad) { out.textContent = text; out.className = bad ? 'warn' : 'muted'; }
+  function run() {
+    var s = form.start_date.value, e = form.end_date.value, t = form.leave_type.value;
+    if (!s || !e || !t) { show('', false); return; }
+    var qs = new URLSearchParams({start: s, end: e, leave_type: t});
+    fetch(url + '?' + qs, {credentials: 'same-origin'})
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) { show('', false); return; }
+        if (d.problem) { show(d.problem, true); return; }
+        if (d.violations.length) {
+          show('Not enough cover on: ' + d.violations.map(function (v) { return v.date; }).join(', ') + '.', true);
+        } else if (d.status === 'pending') {
+          show(d.working_days + ' working day(s). Your team has cover; this request will need your manager\'s approval.', false);
+        } else {
+          show(d.working_days + ' working day(s). Your team has cover; this will be approved immediately.', false);
+        }
+      })
+      .catch(function () { show('', false); });
+  }
+  function schedule() { clearTimeout(timer); timer = setTimeout(run, 250); }
+  ['start_date', 'end_date', 'leave_type'].forEach(function (name) {
+    form[name].addEventListener('change', schedule);
+  });
+  schedule();
+})();
+</script>
+{% endblock %}

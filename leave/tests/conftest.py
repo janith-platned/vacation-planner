@@ -18,15 +18,32 @@ def day(n: int) -> dt.date:
 @pytest.fixture
 def manager(db):
     return User.objects.create_user(
-        "manager", password=PASSWORD, system_role=SystemRole.MANAGER, first_name="Mona", last_name="Manager"
+        "manager",
+        password=PASSWORD,
+        system_role=SystemRole.MANAGER,
+        first_name="Mona",
+        last_name="Manager",
+        must_change_password=False,
     )
 
 
 @pytest.fixture
 def admin_user(db):
     return User.objects.create_user(
-        "admin", password=PASSWORD, system_role=SystemRole.ADMIN, first_name="Ada", last_name="Admin"
+        "admin",
+        password=PASSWORD,
+        system_role=SystemRole.ADMIN,
+        first_name="Ada",
+        last_name="Admin",
+        must_change_password=False,
     )
+
+
+@pytest.fixture
+def frozen_today(monkeypatch):
+    """Pin 'today' so screen tests do not depend on the real date."""
+    monkeypatch.setattr("leave.services.today_for", lambda team: TODAY)
+    return TODAY
 
 
 @pytest.fixture
@@ -57,6 +74,7 @@ def make_member(team, roles):
             last_name="Tester",
             team=team_obj,
             resource_role=role_obj or roles[role],
+            must_change_password=False,
         )
 
     return _make
@@ -70,4 +88,6 @@ def techs(make_member):
 
 @pytest.fixture
 def other_manager(db):
-    return User.objects.create_user("manager2", password=PASSWORD, system_role=SystemRole.MANAGER)
+    return User.objects.create_user(
+        "manager2", password=PASSWORD, system_role=SystemRole.MANAGER, must_change_password=False
+    )

@@ -36,6 +36,7 @@ from .exceptions import (
     FloorViolationError,
     InvalidRequest,
     InvalidState,
+    LeaveError,
     NoWorkingDaysError,
     NotAllowed,
     OverlapError,
@@ -481,6 +482,49 @@ def book_leave(
     except IntegrityError as exc:  # unique(user, date) backstop
         raise OverlapError("You already have leave on one or more of these days.") from exc
     return request
+
+
+@dataclass(frozen=True)
+class BookingPreview:
+    working_days: int
+    violations: tuple
+    status: Optional[str]  # status the booking would get; None when it would be refused
+    problem: Optional[str]  # reason for a non-floor refusal
+
+
+def preview_booking(
+    *,
+    user: User,
+    leave_type: LeaveType,
+    start_date: dt.date,
+    end_date: dt.date,
+    today: Optional[dt.date] = None,
+) -> BookingPreview:
+    """Read-only look at what book_leave would do for the user themselves.
+
+    Advisory only: it takes no lock, so book_leave re-checks at submit time.
+    """
+    try:
+        if user.team_id is None or user.resource_role_id is None:
+            raise InvalidRequest("Your account has no team or resource role.")
+        team = user.team
+        _validate_leave_type(leave_type, team, privileged=False)
+        if end_date < start_date:
+            raise InvalidRequest("The end date is before the start date.")
+        if start_date < (today or today_for(team)):
+            raise InvalidRequest("Leave cannot start in the past.")
+        dates = working_days(team, start_date, end_date)
+        if not dates:
+            raise NoWorkingDaysError("The selected dates contain no working days.")
+        if LeaveDay.objects.filter(user=user, date__in=dates).exists():
+            raise OverlapError("You already have leave on one or more of these days.")
+    except LeaveError as exc:
+        return BookingPreview(0, (), None, str(exc))
+    violations: tuple = ()
+    if leave_type.counts_toward_floor and user.counts_toward_headcount():
+        violations = tuple(check_floor(team, user.resource_role, dates))
+    status = None if violations else _initial_status(team, leave_type, len(dates), privileged=False)
+    return BookingPreview(len(dates), violations, status, None)
 
 
 def modify_leave(

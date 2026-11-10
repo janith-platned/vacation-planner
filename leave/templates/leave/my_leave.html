@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}My leave · Vacation Planner{% endblock %}
+{% block content %}
+<h1>My leave</h1>
+{% if rows %}
+<table class="list">
+  <thead><tr><th scope="col">Dates</th><th scope="col">Type</th><th scope="col">Working days</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>
+  {% for row in rows %}
+    <tr>
+      <td>{{ row.request.start_date|date:"D j M Y" }}{% if row.request.end_date != row.request.start_date %} to {{ row.request.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td>{{ row.request.leave_type.name }}</td>
+      <td>{{ row.request.working_days }}</td>
+      <td><span class="status">{{ row.request.get_status_display }}</span>{% if row.request.decision_comment %}<br><span class="muted">{{ row.request.decision_comment }}</span>{% endif %}{% if row.request.cancel_reason %}<br><span class="muted">{{ row.request.cancel_reason }}</span>{% endif %}</td>
+      <td>
+        {% if row.can_cancel %}
+        <form method="post" action="{% url 'cancel-leave' row.request.pk %}" onsubmit="return confirm('Cancel this leave?');">
+          {% csrf_token %}<button class="link" type="submit">Cancel</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="card">You have no leave yet. <a href="{% url 'book-leave' %}">Book leave</a></p>
+{% endif %}
+{% endblock %}

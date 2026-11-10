@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Vacation Planner{% endblock %}
+{% block content %}
+<h1>Sign in</h1>
+<form method="post" class="card" style="max-width: 420px">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <label for="{{ form.username.id_for_label }}">Username</label>
+  {{ form.username }} {{ form.username.errors }}
+  <label for="{{ form.password.id_for_label }}">Password</label>
+  {{ form.password }} {{ form.password.errors }}
+  <p><button type="submit">Sign in</button></p>
+  {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+</form>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Calendar · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .cal { width: 100%; border-collapse: separate; border-spacing: 4px; table-layout: fixed; }
+  .cal th { font-size: .85rem; color: var(--muted); font-weight: 600; text-align: left; padding: 2px 4px; }
+  .cal td { vertical-align: top; height: 92px; padding: 6px; border: 1px solid var(--border); border-radius: 6px; font-size: .8rem; background: var(--surface); }
+  .cal td .num { font-weight: 700; font-size: .95rem; }
+  .cal td.ok { background: var(--ok); border-color: var(--ok-b); }
+  .cal td.low { background: var(--low); border-color: var(--low-b); }
+  .cal td.full { background: var(--full); border-color: var(--full-b); border-width: 2px; }
+  .cal td.nofloor { background: var(--nofloor); }
+  .cal td.off, .cal td.out { background: var(--off); color: var(--muted); }
+  .cal td.out { opacity: .45; }
+  .badge { display: inline-block; margin-top: 4px; padding: 0 6px; border: 1px solid var(--accent); color: var(--accent); border-radius: 10px; font-size: .75rem; font-weight: 600; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; margin-bottom: 12px; }
+  .toolbar form { display: flex; gap: 8px; align-items: center; margin: 0; }
+  .toolbar label { margin: 0; }
+  .tabs a { padding: 4px 10px; border: 1px solid var(--border); border-radius: 6px; text-decoration: none; margin-right: 4px; }
+  .tabs a[aria-current="page"] { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .85rem; color: var(--muted); margin-top: 12px; }
+  @media (max-width: 640px) { .cal td { height: 76px; font-size: .7rem; padding: 3px; } }
+</style>
+{% endblock %}
+{% block content %}
+{% if no_team %}
+  <h1>Calendar</h1>
+  <p class="card">Your account has no team or resource role yet. Ask your manager to set it up.</p>
+{% else %}
+<h1>{{ month_label }} · {{ team.name }}{% if role %} · {{ role.name }}{% endif %}</h1>
+
+<div class="toolbar">
+  {% if manager_view %}
+  <form method="get" aria-label="Choose team">
+    <input type="hidden" name="month" value="{{ month }}">
+    <label for="team">Team</label>
+    <select id="team" name="team" onchange="this.form.submit()">
+      {% for t in teams %}<option value="{{ t.pk }}"{% if t.pk == team.pk %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+    </select>
+    <noscript><button type="submit">Go</button></noscript>
+  </form>
+  <nav class="tabs" aria-label="Resource role">
+    {% for r in roles %}<a href="?team={{ team.pk }}&amp;role={{ r.pk }}&amp;month={{ month }}"{% if r.pk == role.pk %} aria-current="page"{% endif %}>{{ r.name }}</a>{% endfor %}
+  </nav>
+  {% endif %}
+  <span style="margin-left:auto">
+    <a class="button secondary" href="?{% if manager_view %}team={{ team.pk }}&amp;role={{ role.pk }}&amp;{% endif %}month={{ prev_month }}">&larr; Previous</a>
+    <a class="button secondary" href="?{% if manager_view %}team={{ team.pk }}&amp;role={{ role.pk }}&amp;{% endif %}month={{ next_month }}">Next &rarr;</a>
+  </span>
+</div>
+
+{% if role %}
+<table class="cal" aria-label="Team availability for {{ month_label }}">
+  <thead><tr>{% for d in weekdays %}<th scope="col">{{ d }}</th>{% endfor %}</tr></thead>
+  <tbody>
+  {% for week in weeks %}
+    <tr>
+    {% for cell in week %}
+      <td class="{{ cell.level }}">
+        <div class="num">{{ cell.date.day }}</div>
+        {% if cell.in_month %}
+          {% if cell.counts %}
+            <div>{{ cell.counts.on_leave }} of {{ cell.counts.headcount }} off</div>
+            {% if cell.counts.floor is not None %}<div>Floor {{ cell.counts.floor }}</div>{% endif %}
+          {% endif %}
+          <div><strong>{{ cell.label }}</strong></div>
+          {% if cell.mine %}<span class="badge">You're off</span>{% endif %}
+        {% endif %}
+      </td>
+    {% endfor %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<div class="legend" aria-label="Legend">
+  <span>"n of m off": colleagues in this role on leave (booked or pending) out of the role's headcount.</span>
+  <span>Floor: minimum people who must stay available.</span>
+  <span>Slots left: how many more people can book that day.</span>
+</div>
+<p style="margin-top:16px"><a class="button" href="{% url 'book-leave' %}">Book leave</a></p>
+{% else %}
+<p class="card">This team has no active resource roles.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

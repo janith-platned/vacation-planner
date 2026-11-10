@@ -3,6 +3,7 @@ from __future__ import annotations
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import UserManager as DjangoUserManager
 from django.core.exceptions import ValidationError
 from django.db import models
 
@@ -95,7 +96,17 @@ class ResourceRole(models.Model):
         return f"{self.team.name}: {self.name}"
 
 
+class UserManager(DjangoUserManager):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        # A superuser created from the command line is the application's administrator.
+        extra_fields.setdefault("system_role", SystemRole.ADMIN)
+        extra_fields.setdefault("must_change_password", False)
+        return super().create_superuser(username, email, password, **extra_fields)
+
+
 class User(AbstractUser):
+    objects = UserManager()
+
     system_role = models.CharField(
         max_length=10, choices=SystemRole.choices, default=SystemRole.MEMBER
     )

@@ -5,6 +5,9 @@ from . import manage_pages, pages, views
 urlpatterns = [
     path("manage/approvals/", manage_pages.approvals_page, name="approvals"),
     path("manage/approvals/<int:pk>/decide/", manage_pages.decide_request_view, name="decide-request"),
+    path("manage/requests/<int:pk>/", manage_pages.request_detail_page, name="request-detail"),
+    path("manage/log-leave/", manage_pages.log_leave_page, name="log-leave"),
+    path("manage/api/check/", manage_pages.manager_check, name="manager-check"),
     path("manage/requests/<int:pk>/modify/", manage_pages.modify_request_view, name="modify-request"),
     path("manage/requests/<int:pk>/reject/", manage_pages.reject_approved_view, name="reject-approved"),
     path("calendar/", pages.calendar_page, name="calendar"),

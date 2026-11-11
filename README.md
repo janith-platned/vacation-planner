@@ -10,7 +10,11 @@ Managers approve or reject pending requests on the Approvals screen, which shows
 
 The Floors screen sets each role's floor for a whole month in one step, shows the month as a calendar of floor and cover per role, and takes date or range overrides (newest wins). Raising a floor warns which days now fall short but never cancels leave.
 
-Not built yet: manager screens (breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The Breaches screen lists days below a floor over the next 30 to 180 days with who is booked off, and lets the manager open a request or cancel it with a reason the employee sees.
+
+The Team screen lets a manager add members (with a one-time temporary password), edit their details and role, reset passwords, and deactivate or reactivate them. Deactivating cancels leave that has not started, cuts leave in progress back to the days already taken, and warns if a floor is now short. Changing someone's role is refused while they have leave from today on.
+
+Not built yet: the Settings screen, notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

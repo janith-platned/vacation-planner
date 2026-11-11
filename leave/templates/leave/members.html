@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Team · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .filters, .add-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .filters { margin: 8px 0 12px; }
+  .filters label, .add-form label { margin: 0 0 4px; font-size: .85rem; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--nofloor); }
+  .badge.active { background: var(--ok); border-color: var(--ok-b); }
+  .table-wrap { overflow-x: auto; }
+  details.add summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  @media (max-width: 640px) {
+    table.list thead { display: none; }
+    table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+    table.list tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: var(--surface); }
+    table.list td { border: 0; padding: 2px 0; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<h1>Team</h1>
+{% if not teams %}
+<p class="card">You don't manage any teams yet.</p>
+{% else %}
+<details class="card add"{% if not members %} open{% endif %}>
+  <summary>Add a team member</summary>
+  <form method="post" action="{% url 'add-member' %}" class="add-form" style="margin-top:8px">
+    {% csrf_token %}
+    <div><label for="{{ form.first_name.id_for_label }}">First name</label>{{ form.first_name }}</div>
+    <div><label for="{{ form.last_name.id_for_label }}">Last name</label>{{ form.last_name }}</div>
+    <div><label for="{{ form.username.id_for_label }}">Username</label>{{ form.username }}</div>
+    <div><label for="{{ form.email.id_for_label }}">Email (optional)</label>{{ form.email }}</div>
+    <div><label for="{{ form.resource_role.id_for_label }}">Role{% if multi_team %} and team{% endif %}</label>{{ form.resource_role }}</div>
+    <button type="submit">Add member</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">A temporary password is shown once after adding. The member must change it at first sign-in.</p>
+</details>
+
+<form method="get" class="filters" role="search" aria-label="Filter people">
+  <div><label for="q">Search by name</label><input type="search" id="q" name="q" value="{{ q }}"></div>
+  {% if multi_team %}
+  <div><label for="team">Team</label>
+    <select id="team" name="team">
+      <option value="">All my teams</option>
+      {% for t in teams %}<option value="{{ t.pk }}"{% if selected_team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div><label for="status">Status</label>
+    <select id="status" name="status">
+      {% for value, label in status_options %}<option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button type="submit">Apply</button>
+</form>
+
+{% if members %}
+<div class="table-wrap">
+<table class="list">
+  <thead><tr><th scope="col">Name</th><th scope="col">Role</th><th scope="col">Team</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>
+  {% for m in members %}
+    <tr>
+      <td><a href="{% url 'member-detail' m.pk %}">{{ m.get_full_name|default:m.username }}</a><br><span class="muted">{{ m.username }}</span></td>
+      <td>{{ m.resource_role.name|default:"—" }}</td>
+      <td>{{ m.team.name }}</td>
+      <td><span class="badge{% if m.is_active %} active{% endif %}">{% if m.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+      <td><a href="{% url 'member-detail' m.pk %}">Manage</a></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">{{ members|length }} {{ members|length|pluralize:"person,people" }}.</p>
+{% else %}
+<p class="card">No people match.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

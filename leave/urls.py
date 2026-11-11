@@ -1,8 +1,10 @@
 from django.urls import path
 
-from . import floor_pages, manage_pages, pages, views
+from . import breach_pages, floor_pages, manage_pages, pages, views
 
 urlpatterns = [
+    path("manage/breaches/", breach_pages.breaches_page, name="breaches"),
+    path("manage/requests/<int:pk>/cancel/", breach_pages.cancel_request_view, name="cancel-request"),
     path("manage/floors/", floor_pages.floors_page, name="floors"),
     path("manage/floors/month/", floor_pages.set_month_floors_view, name="set-month-floors"),
     path("manage/floors/override/", floor_pages.add_override_view, name="add-override"),

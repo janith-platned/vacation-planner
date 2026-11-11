@@ -138,7 +138,7 @@ def _report_breaches(request, team, first, last):
     messages.warning(
         request,
         f"{len(breaches)} day{'s are' if len(breaches) != 1 else ' is'} now below a floor: {shown}{more}. "
-        "Existing leave stays in place; cancel or change it from Approvals if needed.",
+        "Existing leave stays in place; review it on the Breaches screen.",
     )
 
 

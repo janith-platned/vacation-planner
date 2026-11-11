@@ -10,7 +10,9 @@ Managers approve or reject pending requests on the Approvals screen, which shows
 
 The Floors screen sets each role's floor for a whole month in one step, shows the month as a calendar of floor and cover per role, and takes date or range overrides (newest wins). Raising a floor warns which days now fall short but never cancels leave.
 
-Not built yet: manager screens (breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The Breaches screen lists days below a floor over the next 30 to 180 days with who is booked off, and lets the manager open a request or cancel it with a reason the employee sees.
+
+Not built yet: manager screens (team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

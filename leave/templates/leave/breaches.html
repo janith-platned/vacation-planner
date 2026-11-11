@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Floor breaches · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 8px 0 16px; }
+  .filters label { margin: 0 0 4px; font-size: .85rem; }
+  .breach { border-left: 5px solid var(--full-b); }
+  .breach h2 { font-size: 1.05rem; margin: 0 0 4px; }
+  .breach .short { color: var(--full-b); font-weight: 600; }
+  .person { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: center; justify-content: space-between; padding: 8px 0; border-top: 1px solid var(--border); }
+  .person form { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 6px 0 0; width: 100%; }
+  .person form input[type=text] { flex: 1 1 240px; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+</style>
+{% endblock %}
+{% block content %}
+<h1>Floor breaches</h1>
+<p class="muted">Working days where fewer people are available than the floor requires. Nothing is cancelled automatically: open the request to change its dates, or cancel it with a reason the employee will see.</p>
+
+<form method="get" class="filters" aria-label="Filter breaches">
+  {% if teams|length > 1 %}
+  <div><label for="team">Team</label>
+    <select id="team" name="team">
+      <option value="">All my teams</option>
+      {% for t in teams %}<option value="{{ t.pk }}"{% if selected_team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div><label for="role">Role</label>
+    <select id="role" name="role">
+      <option value="">All roles</option>
+      {% for name in roles %}<option value="{{ name }}"{% if role == name %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div><label for="days">Look ahead</label>
+    <select id="days" name="days">
+      {% for value, label in windows %}<option value="{{ value }}"{% if days == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button type="submit">Apply</button>
+</form>
+
+{% if rows %}
+<p><strong>{{ rows|length }}</strong> role-day{{ rows|length|pluralize }} below the floor.</p>
+{% for b in rows %}
+<section class="card breach" aria-label="{{ b.role }} on {{ b.date|date:'D j M Y' }}">
+  <h2>{{ b.date|date:"D j M Y" }} · {{ b.role }}{% if multi_team %} · {{ b.team.name }}{% endif %}</h2>
+  <p>Floor {{ b.floor }}, {{ b.available }} available: <span class="short">short by {{ b.short_by }}</span>.</p>
+  {% for p in b.people %}
+  <div class="person">
+    <span>
+      <strong>{{ p.user.get_full_name|default:p.user.username }}</strong>
+      <span class="muted">· {{ p.request.leave_type.name }} · {{ p.request.start_date|date:"j M" }}{% if p.request.end_date != p.request.start_date %} to {{ p.request.end_date|date:"j M Y" }}{% else %} {{ p.request.start_date|date:"Y" }}{% endif %} · {{ p.request.get_status_display }}</span>
+    </span>
+    <span>
+      <a href="{% url 'request-detail' p.request.pk %}">Open</a>
+    </span>
+    <details style="width:100%">
+      <summary>Cancel this leave</summary>
+      <form method="post" action="{% url 'cancel-request' p.request.pk %}">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <input type="text" name="reason" maxlength="500" required placeholder="Reason (shown to the employee)" aria-label="Reason for cancelling">
+        <button type="submit" class="secondary">Cancel and release the days</button>
+      </form>
+    </details>
+  </div>
+  {% endfor %}
+</section>
+{% endfor %}
+{% else %}
+<p class="card">No days are below their floors in the next {{ days }} days.</p>
+{% endif %}
+{% endblock %}

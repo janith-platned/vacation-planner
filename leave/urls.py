@@ -1,8 +1,10 @@
 from django.urls import path
 
-from . import breach_pages, console_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
+from . import audit_pages, breach_pages, console_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
 
 urlpatterns = [
+    path("manage/audit/", audit_pages.audit_page, name="audit"),
+    path("manage/audit/export.csv", audit_pages.audit_csv, name="audit-csv"),
     path("console/", console_pages.console_page, name="console"),
     path("console/view-as/stop/", console_pages.view_as_stop, name="view-as-stop"),
     path("console/view-as/<int:pk>/", console_pages.view_as_start, name="view-as-start"),

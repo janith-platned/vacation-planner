@@ -101,9 +101,11 @@ def _require_manager(user: User, team: Team) -> None:
 
 
 def _audit(*, actor, action, entity, before=None, after=None, on_behalf_of=None) -> None:
+    team_id = entity.pk if isinstance(entity, Team) else getattr(entity, "team_id", None)
     AuditLog.objects.create(
         actor=actor,
         on_behalf_of=on_behalf_of,
+        team_id=team_id,
         action=action,
         entity_type=entity.__class__.__name__,
         entity_id=entity.pk,

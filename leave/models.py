@@ -163,6 +163,9 @@ class AuditLog(models.Model):
     on_behalf_of = models.ForeignKey(
         settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.PROTECT, related_name="+"
     )
+    # The team the change belongs to, so a manager sees only their own teams' history.
+    # NULL for organisation-wide changes (regions, departments, manager accounts): administrators only.
+    team = models.ForeignKey("accounts.Team", null=True, blank=True, on_delete=models.PROTECT, related_name="+")
     action = models.CharField(max_length=64)
     entity_type = models.CharField(max_length=64)
     entity_id = models.BigIntegerField(null=True)
@@ -172,6 +175,7 @@ class AuditLog(models.Model):
 
     class Meta:
         ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["team", "-created_at"])]
 
     def save(self, *args, **kwargs) -> None:
         if self.pk is not None:

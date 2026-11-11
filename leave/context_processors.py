@@ -12,4 +12,4 @@ def manager_nav(request):
     count = LeaveRequest.objects.filter(
         team__in=services.managed_teams(user), status=LeaveRequest.Status.PENDING
     ).count()
-    return {"pending_approvals": count}
+    return {"pending_approvals": count, "view_as_manager": getattr(user, "view_as_manager", None)}

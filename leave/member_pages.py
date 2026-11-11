@@ -101,6 +101,7 @@ def add_member_view(request):
             first_name=data["first_name"],
             last_name=data["last_name"],
             email=data["email"],
+            department=data["department"],
         )
     except LeaveError as exc:
         messages.error(request, str(exc))
@@ -130,6 +131,7 @@ def member_detail_page(request, pk: int):
                     "last_name": person.last_name,
                     "email": person.email,
                     "resource_role": person.resource_role_id,
+                    "department": person.department_id,
                 },
             ),
             "upcoming": list(upcoming),
@@ -156,6 +158,7 @@ def update_member_view(request, pk: int):
             last_name=data["last_name"],
             email=data["email"],
             resource_role=data["resource_role"],
+            department=data["department"],
         )
     except LeaveError as exc:
         messages.error(request, str(exc))

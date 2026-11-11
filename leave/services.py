@@ -272,8 +272,15 @@ def cover_issues(request: LeaveRequest) -> list[CoverDay]:
 
 
 def managed_teams(user: User):
-    """Teams the user may manage: all for an administrator, their own for a manager."""
+    """Teams the user may manage: all for an administrator, their own for a manager.
+
+    An administrator who is viewing as a manager (set per request by ViewAsMiddleware)
+    sees only that manager's teams, exactly as the manager would.
+    """
     if user.system_role == SystemRole.ADMIN:
+        viewed = getattr(user, "view_as_manager", None)
+        if viewed is not None:
+            return Team.objects.select_related("region").filter(manager=viewed)
         return Team.objects.select_related("region").all()
     if user.system_role == SystemRole.MANAGER:
         return Team.objects.select_related("region").filter(manager=user)

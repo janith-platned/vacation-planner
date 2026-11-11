@@ -1,6 +1,6 @@
 from django import forms
 
-from accounts.models import ResourceRole, User
+from accounts.models import Department, ResourceRole, User
 
 from .models import LeaveType
 
@@ -61,6 +61,7 @@ class MemberForm(forms.Form):
     last_name = forms.CharField(max_length=150, required=False)
     email = forms.EmailField(required=False)
     resource_role = _RoleField(queryset=ResourceRole.objects.none(), empty_label=None)
+    department = forms.ModelChoiceField(queryset=Department.objects.all(), required=False, empty_label="None")
 
     def __init__(self, *args, roles, **kwargs):
         super().__init__(*args, **kwargs)

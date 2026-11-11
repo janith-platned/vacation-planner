@@ -16,7 +16,9 @@ The Team screen lets a manager add members (with a one-time temporary password),
 
 The Settings screen lets a manager set each team's approval threshold (or no approval), working days, time zone and whether the manager counts toward headcount, add or rename resource roles, define leave types (counts toward floor, employee-bookable, always needs approval, own threshold), and manage holidays. Changes never move leave that is already booked.
 
-Not built yet: notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The administrator console (admins only) lists every team with filters by manager, region and department, lets an administrator "view as" any manager (the manager screens then show exactly that manager's teams, with a banner and an Exit button), and manages regions, departments, teams (one manager and one region each) and manager accounts. A person's department is set on the Team screen.
+
+Not built yet: notifications, the audit log screen, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

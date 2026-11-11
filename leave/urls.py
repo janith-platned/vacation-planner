@@ -1,8 +1,20 @@
 from django.urls import path
 
-from . import breach_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
+from . import breach_pages, console_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
 
 urlpatterns = [
+    path("console/", console_pages.console_page, name="console"),
+    path("console/view-as/stop/", console_pages.view_as_stop, name="view-as-stop"),
+    path("console/view-as/<int:pk>/", console_pages.view_as_start, name="view-as-start"),
+    path("console/teams/add/", console_pages.add_team, name="console-add-team"),
+    path("console/teams/<int:pk>/", console_pages.update_team, name="console-update-team"),
+    path("console/managers/add/", console_pages.add_manager, name="console-add-manager"),
+    path("console/regions/add/", console_pages.add_region, name="console-add-region"),
+    path("console/regions/<int:pk>/", console_pages.rename_region, name="console-rename-region"),
+    path("console/regions/<int:pk>/delete/", console_pages.delete_region, name="console-delete-region"),
+    path("console/departments/add/", console_pages.add_department, name="console-add-department"),
+    path("console/departments/<int:pk>/", console_pages.rename_department, name="console-rename-department"),
+    path("console/departments/<int:pk>/delete/", console_pages.delete_department, name="console-delete-department"),
     path("manage/settings/", settings_pages.settings_page, name="settings"),
     path("manage/settings/rules/", settings_pages.save_rules_view, name="save-rules"),
     path("manage/settings/roles/add/", settings_pages.add_role_view, name="add-role"),

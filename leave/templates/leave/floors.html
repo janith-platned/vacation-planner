@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Floors · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .page-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 8px 0 16px; }
+  .toolbar label { margin: 0 0 4px; font-size: .85rem; }
+  .month-nav { display: flex; align-items: center; gap: 12px; }
+  .month-nav strong { min-width: 9rem; text-align: center; }
+  .role-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: flex-end; justify-content: space-between; }
+  .role-head h2 { margin: 0; font-size: 1.15rem; }
+  .floor-input { width: 5.5rem; }
+  table.cal { width: 100%; border-collapse: separate; border-spacing: 3px; table-layout: fixed; margin-top: 8px; }
+  table.cal th { font-size: .8rem; color: var(--muted); font-weight: 600; }
+  table.cal td { height: 4.2rem; vertical-align: top; padding: 4px 6px; border-radius: 6px; border: 1px solid var(--border); font-size: .8rem; }
+  table.cal td .d { font-weight: 600; }
+  table.cal td.ok { background: var(--ok); border-color: var(--ok-b); }
+  table.cal td.low { background: var(--low); border-color: var(--low-b); }
+  table.cal td.breach { background: var(--full); border-color: var(--full-b); }
+  table.cal td.nofloor { background: var(--nofloor); }
+  table.cal td.off, table.cal td.out { background: var(--off); color: var(--muted); border-style: dashed; }
+  table.cal td.out { opacity: .5; }
+  .ovr { font-weight: 700; color: var(--accent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: .85rem; color: var(--muted); margin: 4px 0 16px; }
+  .legend span::before { content: ""; display: inline-block; width: .8em; height: .8em; border-radius: 3px; margin-right: 6px; border: 1px solid var(--border); vertical-align: -1px; }
+  .legend .ok::before { background: var(--ok); } .legend .low::before { background: var(--low); } .legend .breach::before { background: var(--full); } .legend .nofloor::before { background: var(--nofloor); }
+  .ovr-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .ovr-form label { margin: 0 0 4px; font-size: .85rem; }
+  @media (max-width: 640px) { table.cal td { height: 3.4rem; padding: 2px 3px; font-size: .7rem; } .month-nav strong { min-width: 7rem; } }
+</style>
+{% endblock %}
+{% block content %}
+{% if not team %}
+<h1>Floors</h1>
+<p class="card">You don't manage any teams yet.</p>
+{% else %}
+<div class="page-head"><h1>Floors</h1></div>
+
+<div class="toolbar">
+  {% if teams|length > 1 %}
+  <form method="get" class="toolbar" style="margin:0">
+    <input type="hidden" name="month" value="{{ month_value }}">
+    <div><label for="team">Team</label>
+      <select id="team" name="team" onchange="this.form.submit()">
+        {% for t in teams %}<option value="{{ t.pk }}"{% if t.pk == team.pk %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+      </select>
+    </div>
+    <noscript><button type="submit">Go</button></noscript>
+  </form>
+  {% else %}
+  <strong>{{ team.name }} ({{ team.region.name }})</strong>
+  {% endif %}
+  <div class="month-nav" role="group" aria-label="Month">
+    <a class="button secondary" href="?team={{ team.pk }}&amp;month={{ prev_month }}" aria-label="Previous month">&larr;</a>
+    <strong>{{ first|date:"F Y" }}</strong>
+    <a class="button secondary" href="?team={{ team.pk }}&amp;month={{ next_month }}" aria-label="Next month">&rarr;</a>
+  </div>
+</div>
+
+<p class="muted">The floor is the minimum number of people who must be available each working day. Set it for the whole month in one step, then override specific dates. Raising a floor never cancels existing leave.</p>
+
+<form method="post" action="{% url 'set-month-floors' %}" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  <input type="hidden" name="month" value="{{ month_value }}">
+  <h2 style="margin-top:0;font-size:1.1rem">Floor for {{ first|date:"F Y" }}</h2>
+  <div class="ovr-form">
+    {% for b in blocks %}
+    <div>
+      <label for="floor_{{ b.role.pk }}">{{ b.role.name }} <span class="muted">({{ b.headcount }} in team)</span></label>
+      <input class="floor-input" type="number" min="0" max="999" id="floor_{{ b.role.pk }}" name="floor_{{ b.role.pk }}" value="{{ b.month_floor|default_if_none:'' }}" placeholder="none">
+    </div>
+    {% endfor %}
+    <button type="submit">Apply to whole month</button>
+  </div>
+  <p class="muted" style="margin-bottom:0">Leave a box empty to keep it as it is. Overrides for specific dates are kept.</p>
+</form>
+
+<div class="legend" aria-hidden="true">
+  <span class="ok">Cover holds</span><span class="low">At the floor (no slot left)</span><span class="breach">Below the floor</span><span class="nofloor">No floor set</span>
+</div>
+
+{% for b in blocks %}
+<section class="card" aria-labelledby="role-{{ b.role.pk }}">
+  <div class="role-head">
+    <h2 id="role-{{ b.role.pk }}">{{ b.role.name }}</h2>
+    <span class="muted">{% if b.month_floor is None %}No month floor set{% else %}Month floor {{ b.month_floor }}{% endif %} · {{ b.headcount }} in team</span>
+  </div>
+  <table class="cal">
+    <thead><tr>{% for w in weekdays %}<th scope="col">{{ w }}</th>{% endfor %}</tr></thead>
+    <tbody>
+    {% for week in b.weeks %}
+      <tr>
+      {% for c in week %}
+        {% if not c.in_month %}<td class="out"><span class="d">{{ c.date.day }}</span></td>
+        {% elif not c.working %}<td class="off"><span class="d">{{ c.date.day }}</span><br>Off</td>
+        {% else %}<td class="{{ c.state }}">
+          <span class="d">{{ c.date.day }}</span>{% if c.override %} <span class="ovr" title="Date override">*</span>{% endif %}<br>
+          {% if c.count.floor is None %}No floor{% else %}Floor {{ c.count.floor }}<br>{{ c.available }} avail.{% endif %}
+        </td>{% endif %}
+      {% endfor %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+<p class="muted"><span class="ovr">*</span> marks a day whose floor comes from a date override.</p>
+
+<h2>Date overrides</h2>
+<form method="post" action="{% url 'add-override' %}" class="card ovr-form">
+  {% csrf_token %}
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  <input type="hidden" name="month" value="{{ month_value }}">
+  <div><label for="{{ override_form.role.id_for_label }}">Role</label>{{ override_form.role }}</div>
+  <div><label for="{{ override_form.start_date.id_for_label }}">First day</label>{{ override_form.start_date }}</div>
+  <div><label for="{{ override_form.end_date.id_for_label }}">Last day</label>{{ override_form.end_date }}</div>
+  <div><label for="{{ override_form.min_available.id_for_label }}">Floor</label><input class="floor-input" type="number" min="0" max="999" name="min_available" id="{{ override_form.min_available.id_for_label }}" required></div>
+  <button type="submit">Add override</button>
+</form>
+
+{% if overrides %}
+<table class="list">
+  <thead><tr><th scope="col">Role</th><th scope="col">Dates</th><th scope="col">Floor</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>
+  {% for o in overrides %}
+    <tr>
+      <td>{{ o.resource_role.name }}</td>
+      <td>{{ o.start_date|date:"D j M Y" }}{% if o.end_date != o.start_date %} to {{ o.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td>{{ o.min_available }}</td>
+      <td>
+        <form method="post" action="{% url 'delete-override' o.pk %}" onsubmit="return confirm('Remove this override?');">
+          {% csrf_token %}<button class="link" type="submit">Remove</button>
+        </form>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+<p class="muted">When overrides overlap, the newest one wins.</p>
+{% else %}
+<p class="muted">No date overrides in {{ first|date:"F Y" }}.</p>
+{% endif %}
+{% endif %}
+{% endblock %}

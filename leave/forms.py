@@ -1,6 +1,6 @@
 from django import forms
 
-from accounts.models import User
+from accounts.models import ResourceRole, User
 
 from .models import LeaveType
 
@@ -48,6 +48,28 @@ class LogLeaveForm(forms.Form):
         employee, leave_type = data.get("employee"), data.get("leave_type")
         if employee and leave_type and leave_type.team_id != employee.team_id:
             self.add_error("leave_type", "That leave type belongs to a different team than the employee.")
+        return data
+
+
+class OverrideFloorForm(forms.Form):
+    """Override the floor for one role on a date or range."""
+
+    role = forms.ModelChoiceField(queryset=None, empty_label=None)
+    start_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    end_date = forms.DateField(widget=forms.DateInput(attrs={"type": "date"}))
+    min_available = forms.IntegerField(min_value=0, max_value=999)
+
+    def __init__(self, *args, roles, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["role"].queryset = ResourceRole.objects.filter(pk__in=[r.pk for r in roles]).order_by("name")
+
+    def clean(self):
+        data = super().clean()
+        start, end = data.get("start_date"), data.get("end_date")
+        if start and end and end < start:
+            self.add_error("end_date", "The end date cannot be before the start date.")
+        elif start and end and (end - start).days > 366:
+            self.add_error("end_date", "An override cannot cover more than a year.")
         return data
 
 

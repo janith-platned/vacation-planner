@@ -8,7 +8,9 @@ Specification complete. Built and tested: data model, floor check, booking, appr
 
 Managers approve or reject pending requests on the Approvals screen, which shows each request's cover against today's floors and a badge with the number waiting. Below the pending cards, a searchable, filterable, paginated table lists every request (filter by name, team, role, status and when); each row opens a detail page with the days, cover, history, and the actions to change the dates of approved leave (checked against the floor, with a floor override that needs a reason) or reject it with a required reason shown to the employee. Managers can also log leave on behalf of an employee: it is approved at once, may be in the past or use restricted leave types, shows a live floor check, and the employee sees who logged it.
 
-Not built yet: manager screens (floors grid, breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The Floors screen sets each role's floor for a whole month in one step, shows the month as a calendar of floor and cover per role, and takes date or range overrides (newest wins). Raising a floor warns which days now fall short but never cancels leave.
+
+Not built yet: manager screens (breaches, team and settings), notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

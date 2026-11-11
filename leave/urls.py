@@ -1,8 +1,12 @@
 from django.urls import path
 
-from . import manage_pages, pages, views
+from . import floor_pages, manage_pages, pages, views
 
 urlpatterns = [
+    path("manage/floors/", floor_pages.floors_page, name="floors"),
+    path("manage/floors/month/", floor_pages.set_month_floors_view, name="set-month-floors"),
+    path("manage/floors/override/", floor_pages.add_override_view, name="add-override"),
+    path("manage/floors/<int:pk>/delete/", floor_pages.delete_override_view, name="delete-override"),
     path("manage/approvals/", manage_pages.approvals_page, name="approvals"),
     path("manage/approvals/<int:pk>/decide/", manage_pages.decide_request_view, name="decide-request"),
     path("manage/requests/<int:pk>/", manage_pages.request_detail_page, name="request-detail"),

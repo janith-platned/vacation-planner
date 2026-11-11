@@ -216,3 +216,30 @@ def test_role_name_must_be_unique_and_present(client, manager, team, roles):
 def test_other_managers_roles_are_404(client, other_manager, roles):
     client.force_login(other_manager)
     assert client.post(reverse("update-role", args=[roles["Technical"].pk]), {"name": "X"}).status_code == 404
+
+
+# ---- service level: the rules hold even if a view forgot to check -------------------------- #
+def test_services_refuse_anyone_but_the_teams_manager(team, roles, other_manager, techs, vacation):
+    from leave import settings_services as svc
+    from leave.exceptions import NotAllowed
+
+    holiday = Holiday.objects.create(team=team, date=day(1), name="X")
+    with pytest.raises(NotAllowed):
+        svc.delete_holiday(actor=other_manager, holiday=holiday)
+    with pytest.raises(NotAllowed):
+        svc.add_holiday(actor=techs[0], team=team, date=day(2), name="Y")
+    with pytest.raises(NotAllowed):
+        svc.add_resource_role(actor=other_manager, team=team, name="Z")
+    with pytest.raises(NotAllowed):
+        svc.update_resource_role(actor=other_manager, role=roles["Technical"], name="Z", active=True)
+    with pytest.raises(NotAllowed):
+        svc.save_leave_type(
+            actor=other_manager, team=team, leave_type=vacation, name="Z", counts_toward_floor=True,
+            always_needs_approval=False, employee_bookable=True, approval_threshold_override=None, active=True,
+        )
+    with pytest.raises(NotAllowed):
+        svc.update_team_rules(
+            actor=techs[0], team=team, approval_threshold=1, working_days=[0], timezone="UTC",
+            manager_counts_toward_headcount=False,
+        )
+    assert Holiday.objects.filter(pk=holiday.pk).exists()

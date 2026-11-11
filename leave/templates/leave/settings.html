@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Settings · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .row-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .row-form label, .checks label { margin: 0 0 4px; font-size: .85rem; }
+  .checks { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 4px 0 8px; }
+  .checks label { font-weight: 400; display: inline-flex; gap: 6px; align-items: center; margin: 0; font-size: .95rem; }
+  .num { width: 5.5rem; }
+  h2.sec { font-size: 1.15rem; margin: 24px 0 8px; }
+  .item { padding: 10px 0; border-top: 1px solid var(--border); }
+  .item:first-child { border-top: 0; }
+  .item.off { opacity: .65; }
+  details summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--nofloor); }
+</style>
+{% endblock %}
+{% block content %}
+{% if not team %}
+<h1>Settings</h1>
+<p class="card">You don't manage any teams yet.</p>
+{% else %}
+<h1>Settings</h1>
+{% if teams|length > 1 %}
+<form method="get" class="row-form" style="margin-bottom:12px">
+  <div><label for="team">Team</label>
+    <select id="team" name="team" onchange="this.form.submit()">
+      {% for t in teams %}<option value="{{ t.pk }}"{% if t.pk == team.pk %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+    </select>
+  </div>
+  <noscript><button type="submit">Go</button></noscript>
+</form>
+{% else %}
+<p><strong>{{ team.name }}</strong> <span class="muted">({{ team.region.name }})</span></p>
+{% endif %}
+
+<h2 class="sec">Team rules</h2>
+<form method="post" action="{% url 'save-rules' %}" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  <fieldset style="border:0;padding:0;margin:0">
+    <legend style="font-weight:600">Approval</legend>
+    <div class="checks">
+      <label><input type="radio" name="approval_mode" value="threshold"{% if not never_approve %} checked{% endif %}> Needs approval above</label>
+      <input class="num" type="number" min="0" max="365" name="approval_threshold" value="{% if never_approve %}5{% else %}{{ team.approval_threshold }}{% endif %}" aria-label="Working days above which approval is needed">
+      <span class="muted">working days (0 = every request)</span>
+      <label><input type="radio" name="approval_mode" value="never"{% if never_approve %} checked{% endif %}> Never needs approval</label>
+    </div>
+  </fieldset>
+  <fieldset style="border:0;padding:0;margin:0">
+    <legend style="font-weight:600">Working days</legend>
+    <div class="checks">
+      {% for num, name in weekdays %}<label><input type="checkbox" name="working_days" value="{{ num }}"{% if num in team.working_days %} checked{% endif %}> {{ name }}</label>{% endfor %}
+    </div>
+  </fieldset>
+  <div class="row-form">
+    <div><label for="timezone">Time zone</label>
+      <select id="timezone" name="timezone">{% for tz in timezones %}<option value="{{ tz }}"{% if tz == team.timezone %} selected{% endif %}>{{ tz }}</option>{% endfor %}</select>
+    </div>
+    <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="manager_counts" value="1"{% if team.manager_counts_toward_headcount %} checked{% endif %}> The manager counts toward the team's headcount</label>
+  </div>
+  <p class="muted">Changing working days, holidays or the time zone does not move leave that is already booked.</p>
+  <button type="submit">Save rules</button>
+</form>
+
+<h2 class="sec">Resource roles</h2>
+<div class="card">
+  {% for r in roles %}
+  <form method="post" action="{% url 'update-role' r.pk %}" class="row-form item{% if not r.active %} off{% endif %}">
+    {% csrf_token %}
+    <div><label for="role-{{ r.pk }}">Name</label><input type="text" id="role-{{ r.pk }}" name="name" value="{{ r.name }}" maxlength="100" required></div>
+    <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="active" value="1"{% if r.active %} checked{% endif %}> Active</label>
+    <button type="submit" class="secondary">Save</button>
+  </form>
+  {% endfor %}
+  <form method="post" action="{% url 'add-role' %}" class="row-form item">
+    {% csrf_token %}<input type="hidden" name="team" value="{{ team.pk }}">
+    <div><label for="new-role">New role</label><input type="text" id="new-role" name="name" maxlength="100" required placeholder="e.g. Support"></div>
+    <button type="submit">Add role</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">A role with active people cannot be switched off. Set a new role's floor on the Floors screen.</p>
+</div>
+
+<h2 class="sec">Leave types</h2>
+<div class="card">
+  {% for lt in leave_types %}
+  <details class="item{% if not lt.active %} off{% endif %}">
+    <summary>{{ lt.name }}
+      {% if not lt.active %}<span class="badge">Inactive</span>{% endif %}
+      {% if not lt.counts_toward_floor %}<span class="badge">Ignores floors</span>{% endif %}
+      {% if not lt.employee_bookable %}<span class="badge">Managers only</span>{% endif %}
+      {% if lt.always_needs_approval %}<span class="badge">Always approved by manager</span>{% endif %}
+    </summary>
+    {% include "leave/_leave_type_form.html" with lt=lt %}
+  </details>
+  {% endfor %}
+  <details class="item">
+    <summary>Add a leave type</summary>
+    {% include "leave/_leave_type_form.html" with lt=None %}
+  </details>
+</div>
+
+<h2 class="sec">Holidays — {{ year }}</h2>
+<form method="get" class="row-form" style="margin-bottom:8px">
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  <div><label for="year">Year</label><input class="num" type="number" id="year" name="year" value="{{ year }}" min="2000" max="2100"></div>
+  <button type="submit" class="secondary">Show</button>
+</form>
+<form method="post" action="{% url 'add-holiday' %}" class="card row-form">
+  {% csrf_token %}<input type="hidden" name="team" value="{{ team.pk }}">
+  <div><label for="h-date">Date</label><input type="date" id="h-date" name="date" required></div>
+  <div><label for="h-name">Name</label><input type="text" id="h-name" name="name" maxlength="150" required placeholder="e.g. Canada Day"></div>
+  <button type="submit">Add holiday</button>
+</form>
+{% if holidays %}
+<table class="list">
+  <thead><tr><th scope="col">Date</th><th scope="col">Name</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>
+  {% for h in holidays %}
+    <tr>
+      <td>{{ h.date|date:"D j M Y" }}</td><td>{{ h.name }}</td>
+      <td><form method="post" action="{% url 'delete-holiday' h.pk %}" onsubmit="return confirm('Remove this holiday?');">{% csrf_token %}<button class="link" type="submit">Remove</button></form></td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p class="muted">No holidays set for {{ year }}.</p>
+{% endif %}
+
+<h2 class="sec">Notifications</h2>
+<p class="card muted">Email notifications are not built yet. They will be configured here.</p>
+{% endif %}
+{% endblock %}

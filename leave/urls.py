@@ -1,8 +1,15 @@
 from django.urls import path
 
-from . import breach_pages, floor_pages, manage_pages, member_pages, pages, views
+from . import breach_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
 
 urlpatterns = [
+    path("manage/settings/", settings_pages.settings_page, name="settings"),
+    path("manage/settings/rules/", settings_pages.save_rules_view, name="save-rules"),
+    path("manage/settings/roles/add/", settings_pages.add_role_view, name="add-role"),
+    path("manage/settings/roles/<int:pk>/", settings_pages.update_role_view, name="update-role"),
+    path("manage/settings/leave-types/", settings_pages.save_leave_type_view, name="save-leave-type"),
+    path("manage/settings/holidays/add/", settings_pages.add_holiday_view, name="add-holiday"),
+    path("manage/settings/holidays/<int:pk>/delete/", settings_pages.delete_holiday_view, name="delete-holiday"),
     path("manage/team/", member_pages.members_page, name="members"),
     path("manage/team/add/", member_pages.add_member_view, name="add-member"),
     path("manage/team/<int:pk>/", member_pages.member_detail_page, name="member-detail"),

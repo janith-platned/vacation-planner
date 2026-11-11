@@ -38,7 +38,7 @@
     .errorlist { color: var(--full-b); list-style: none; padding: 0; margin: 4px 0; }
     .messages { list-style: none; padding: 0; margin: 0 0 16px; }
     .messages li { padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface); margin-bottom: 8px; }
-    .messages li.success { border-color: var(--ok-b); } .messages li.error { border-color: var(--full-b); }
+    .messages li.success { border-color: var(--ok-b); } .messages li.error { border-color: var(--full-b); } .messages li.warning { border-color: var(--low-b); }
     .muted { color: var(--muted); }
     table.list { width: 100%; border-collapse: collapse; }
     table.list th, table.list td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
@@ -59,6 +59,7 @@
       <a href="{% url 'my-leave' %}">My leave</a>
       {% if user.system_role != 'member' %}
       <a href="{% url 'approvals' %}">Approvals{% if pending_approvals %} <strong>({{ pending_approvals }})</strong>{% endif %}</a>
+      <a href="{% url 'floors' %}">Floors</a>
       <a href="{% url 'admin:index' %}">Admin</a>
       {% endif %}
       <a href="{% url 'password-change' %}">Password</a>

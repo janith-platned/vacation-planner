@@ -51,6 +51,26 @@ class LogLeaveForm(forms.Form):
         return data
 
 
+class _RoleField(forms.ModelChoiceField):
+    def label_from_instance(self, role):
+        return f"{role.name} ({role.team.name})"
+
+
+class MemberForm(forms.Form):
+    first_name = forms.CharField(max_length=150)
+    last_name = forms.CharField(max_length=150, required=False)
+    email = forms.EmailField(required=False)
+    resource_role = _RoleField(queryset=ResourceRole.objects.none(), empty_label=None)
+
+    def __init__(self, *args, roles, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["resource_role"].queryset = roles.select_related("team") if hasattr(roles, "select_related") else roles
+
+
+class AddMemberForm(MemberForm):
+    username = forms.CharField(max_length=150)
+
+
 class OverrideFloorForm(forms.Form):
     """Override the floor for one role on a date or range."""
 

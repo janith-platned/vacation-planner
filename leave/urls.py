@@ -1,8 +1,15 @@
 from django.urls import path
 
-from . import breach_pages, floor_pages, manage_pages, pages, views
+from . import breach_pages, floor_pages, manage_pages, member_pages, pages, views
 
 urlpatterns = [
+    path("manage/team/", member_pages.members_page, name="members"),
+    path("manage/team/add/", member_pages.add_member_view, name="add-member"),
+    path("manage/team/<int:pk>/", member_pages.member_detail_page, name="member-detail"),
+    path("manage/team/<int:pk>/update/", member_pages.update_member_view, name="update-member"),
+    path("manage/team/<int:pk>/deactivate/", member_pages.deactivate_member_view, name="deactivate-member"),
+    path("manage/team/<int:pk>/reactivate/", member_pages.reactivate_member_view, name="reactivate-member"),
+    path("manage/team/<int:pk>/reset-password/", member_pages.reset_password_view, name="reset-member-password"),
     path("manage/breaches/", breach_pages.breaches_page, name="breaches"),
     path("manage/requests/<int:pk>/cancel/", breach_pages.cancel_request_view, name="cancel-request"),
     path("manage/floors/", floor_pages.floors_page, name="floors"),

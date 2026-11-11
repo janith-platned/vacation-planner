@@ -24,6 +24,8 @@ def update_team_rules(
     working_days: list[int],
     timezone: str,
     manager_counts_toward_headcount: bool,
+    notify_manager_new_request: bool = True,
+    notify_employee_updates: bool = True,
 ) -> Team:
     """`approval_threshold`: None = nothing needs approval; 0 = everything does; N = more than N working days.
 
@@ -37,22 +39,31 @@ def update_team_rules(
         "working_days": team.working_days,
         "timezone": team.timezone,
         "manager_counts_toward_headcount": team.manager_counts_toward_headcount,
+        "notify_manager_new_request": team.notify_manager_new_request,
+        "notify_employee_updates": team.notify_employee_updates,
     }
     team.approval_threshold = approval_threshold
     team.working_days = sorted(set(working_days))
     team.timezone = timezone
     team.manager_counts_toward_headcount = manager_counts_toward_headcount
+    team.notify_manager_new_request = notify_manager_new_request
+    team.notify_employee_updates = notify_employee_updates
     try:
         team.clean()
     except ValidationError as exc:
         raise InvalidRequest(" ".join(m for msgs in exc.message_dict.values() for m in msgs)) from exc
     with transaction.atomic():
-        team.save(update_fields=["approval_threshold", "working_days", "timezone", "manager_counts_toward_headcount"])
+        team.save(update_fields=[
+            "approval_threshold", "working_days", "timezone", "manager_counts_toward_headcount",
+            "notify_manager_new_request", "notify_employee_updates",
+        ])
         _audit(actor=actor, action="team.settings", entity=team, before=before, after={
             "approval_threshold": team.approval_threshold,
             "working_days": team.working_days,
             "timezone": team.timezone,
             "manager_counts_toward_headcount": team.manager_counts_toward_headcount,
+            "notify_manager_new_request": team.notify_manager_new_request,
+            "notify_employee_updates": team.notify_employee_updates,
         })
     return team
 

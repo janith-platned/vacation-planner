@@ -18,7 +18,9 @@ The Settings screen lets a manager set each team's approval threshold (or no app
 
 The administrator console (admins only) lists every team with filters by manager, region and department, lets an administrator "view as" any manager (the manager screens then show exactly that manager's teams, with a banner and an Exit button), and manages regions, departments, teams (one manager and one region each) and manager accounts. A person's department is set on the Team screen.
 
-Not built yet: notifications, the audit log screen, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+Email notifications: managers are emailed when a request needs approval; employees are emailed when a manager approves, rejects, changes, cancels or logs their leave. Nobody is emailed about their own action, and an employee's email contains only their own leave. Each team can switch either kind off in Settings. Notifications are queued with the change and sent after it commits; failures are recorded and retried with `python manage.py send_notifications` (gives up after 5 attempts). By default emails are printed to the server log (fine for the demo); set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` and `SITE_URL` for real delivery.
+
+Not built yet: the audit log screen, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

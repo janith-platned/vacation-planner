@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from .models import AuditLog, Floor, Holiday, LeaveDay, LeaveRequest, LeaveType
+from .models import AuditLog, Floor, Holiday, LeaveDay, LeaveRequest, LeaveType, Notification
 
 
 @admin.register(LeaveRequest)
@@ -33,3 +33,13 @@ admin.site.register(LeaveType)
 admin.site.register(Holiday)
 admin.site.register(Floor)
 admin.site.register(LeaveDay)
+
+
+@admin.register(Notification)
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "recipient", "event", "subject", "sent_at", "attempts")
+    list_filter = ("event",)
+    readonly_fields = [f.name for f in Notification._meta.fields]
+
+    def has_add_permission(self, request):
+        return False

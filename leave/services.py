@@ -32,6 +32,7 @@ from django.utils import timezone
 
 from accounts.models import ResourceRole, SystemRole, Team, User
 
+from . import notifications
 from .exceptions import (
     FloorViolationError,
     InvalidRequest,
@@ -534,6 +535,7 @@ def book_leave(
                 entity=request,
                 after={**_snapshot(request), "floor_overridden": request.floor_overridden},
             )
+            notifications.booked(request, actor)
     except IntegrityError as exc:  # unique(user, date) backstop
         raise OverlapError("There is already leave on one or more of these days.") from exc
     return request
@@ -651,6 +653,7 @@ def modify_leave(
                 before=before,
                 after={**_snapshot(updated), "floor_overridden": updated.floor_overridden, "comment": updated.decision_comment},
             )
+            notifications.modified(updated, actor)
     except IntegrityError as exc:
         raise OverlapError("You already have leave on one or more of these days.") from exc
     return updated
@@ -681,6 +684,7 @@ def decide_request(*, request: LeaveRequest, actor: User, approve: bool, comment
             before=before,
             after=_snapshot(locked),
         )
+        notifications.decided(locked, actor, approve)
     return locked
 
 
@@ -710,6 +714,7 @@ def revoke_approved_leave(
         locked.save()
         locked.days.all().delete()
         _audit(actor=actor, action="leave.revoke", entity=locked, before=before, after=_snapshot(locked))
+        notifications.revoked(locked, actor)
     return locked
 
 
@@ -741,4 +746,6 @@ def cancel_leave(
         locked.save()
         locked.days.all().delete()
         _audit(actor=actor, action="leave.cancel", entity=locked, before=before, after=_snapshot(locked))
+        if not is_owner:
+            notifications.cancelled_by_manager(locked, actor)
     return locked

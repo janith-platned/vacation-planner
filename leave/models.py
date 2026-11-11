@@ -180,3 +180,26 @@ class AuditLog(models.Model):
 
     def delete(self, *args, **kwargs):
         raise ValidationError("Audit log entries cannot be deleted.")
+
+
+class Notification(models.Model):
+    """An email to send, written in the same transaction as the change that caused it.
+
+    The row is created with the change (so a rolled-back change sends nothing) and the
+    email goes out after the transaction commits. A failure is recorded here and retried
+    by `manage.py send_notifications`; it never breaks the booking or decision itself.
+    """
+
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="+")
+    event = models.CharField(max_length=40)
+    subject = models.CharField(max_length=200)
+    body = models.TextField()
+    request = models.ForeignKey("leave.LeaveRequest", null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    created_at = models.DateTimeField(auto_now_add=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    error = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        indexes = [models.Index(fields=["sent_at", "attempts"])]

@@ -1,0 +1,16 @@
+<form method="post" action="{% url 'save-leave-type' %}" style="margin-top:8px">
+  {% csrf_token %}
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  {% if lt %}<input type="hidden" name="id" value="{{ lt.pk }}">{% endif %}
+  <div class="row-form">
+    <div><label for="lt-name-{{ lt.pk|default:'new' }}">Name</label><input type="text" id="lt-name-{{ lt.pk|default:'new' }}" name="name" value="{{ lt.name|default:'' }}" maxlength="100" required></div>
+    <div><label for="lt-thr-{{ lt.pk|default:'new' }}">Approval above (working days)</label><input class="num" type="number" min="0" max="365" id="lt-thr-{{ lt.pk|default:'new' }}" name="approval_threshold_override" value="{{ lt.approval_threshold_override|default_if_none:'' }}" placeholder="team"></div>
+  </div>
+  <div class="checks">
+    <label><input type="checkbox" name="counts_toward_floor" value="1"{% if not lt or lt.counts_toward_floor %} checked{% endif %}> Counts toward the floor</label>
+    <label><input type="checkbox" name="employee_bookable" value="1"{% if not lt or lt.employee_bookable %} checked{% endif %}> Employees can book it</label>
+    <label><input type="checkbox" name="always_needs_approval" value="1"{% if lt and lt.always_needs_approval %} checked{% endif %}> Always needs approval</label>
+    {% if lt %}<label><input type="checkbox" name="active" value="1"{% if lt.active %} checked{% endif %}> Active</label>{% endif %}
+  </div>
+  <button type="submit"{% if lt %} class="secondary"{% endif %}>{% if lt %}Save{% else %}Add leave type{% endif %}</button>
+</form>

@@ -14,7 +14,9 @@ The Breaches screen lists days below a floor over the next 30 to 180 days with w
 
 The Team screen lets a manager add members (with a one-time temporary password), edit their details and role, reset passwords, and deactivate or reactivate them. Deactivating cancels leave that has not started, cuts leave in progress back to the days already taken, and warns if a floor is now short. Changing someone's role is refused while they have leave from today on.
 
-Not built yet: the Settings screen, notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The Settings screen lets a manager set each team's approval threshold (or no approval), working days, time zone and whether the manager counts toward headcount, add or rename resource roles, define leave types (counts toward floor, employee-bookable, always needs approval, own threshold), and manage holidays. Changes never move leave that is already booked.
+
+Not built yet: notifications, the administrator team filters and view-as, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

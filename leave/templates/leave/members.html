@@ -31,6 +31,7 @@
     <div><label for="{{ form.username.id_for_label }}">Username</label>{{ form.username }}</div>
     <div><label for="{{ form.email.id_for_label }}">Email (optional)</label>{{ form.email }}</div>
     <div><label for="{{ form.resource_role.id_for_label }}">Role{% if multi_team %} and team{% endif %}</label>{{ form.resource_role }}</div>
+    <div><label for="{{ form.department.id_for_label }}">Department</label>{{ form.department }}</div>
     <button type="submit">Add member</button>
   </form>
   <p class="muted" style="margin-bottom:0">A temporary password is shown once after adding. The member must change it at first sign-in.</p>

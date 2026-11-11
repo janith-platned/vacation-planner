@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}Console · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .row-form { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; }
+  .row-form label { margin: 0 0 4px; font-size: .85rem; }
+  h2.sec { font-size: 1.15rem; margin: 24px 0 8px; }
+  .table-wrap { overflow-x: auto; }
+  details summary { cursor: pointer; color: var(--accent); }
+  .inline { display: inline; margin: 0; }
+  .item { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+  .item:first-child { border-top: 0; }
+  @media (max-width: 640px) {
+    table.list thead { display: none; }
+    table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+    table.list tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: var(--surface); }
+    table.list td { border: 0; padding: 2px 0; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<h1>Administrator console</h1>
+<p class="muted">Every team in the organisation. Use "View as manager" to see the manager screens exactly as that manager does.</p>
+
+<h2 class="sec">Teams</h2>
+<form method="get" class="row-form" role="search" aria-label="Filter teams" style="margin-bottom:12px">
+  <div><label for="q">Team name</label><input type="search" id="q" name="q" value="{{ q }}"></div>
+  <div><label for="f-manager">Manager</label>
+    <select id="f-manager" name="manager"><option value="">All</option>
+      {% for m in managers %}<option value="{{ m.pk }}"{% if f_manager == m.pk %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endfor %}
+    </select></div>
+  <div><label for="f-region">Region</label>
+    <select id="f-region" name="region"><option value="">All</option>
+      {% for r in regions %}<option value="{{ r.pk }}"{% if f_region == r.pk %} selected{% endif %}>{{ r.name }}</option>{% endfor %}
+    </select></div>
+  <div><label for="f-dept">Department</label>
+    <select id="f-dept" name="department"><option value="">All</option>
+      {% for d in departments %}<option value="{{ d.pk }}"{% if f_department == d.pk %} selected{% endif %}>{{ d.name }}</option>{% endfor %}
+    </select></div>
+  <button type="submit">Apply</button>
+  {% if filtered %}<a href="{% url 'console' %}">Reset</a>{% endif %}
+</form>
+
+{% if teams %}
+<div class="table-wrap">
+<table class="list">
+  <thead><tr><th scope="col">Team</th><th scope="col">Manager</th><th scope="col">Region</th><th scope="col">People</th><th scope="col">Departments</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <tbody>
+  {% for t in teams %}
+    <tr>
+      <td><strong>{{ t.name }}</strong></td>
+      <td>{{ t.manager.get_full_name|default:t.manager.username }}</td>
+      <td>{{ t.region.name }}</td>
+      <td>{{ t.member_count }}</td>
+      <td>{{ t.departments|join:", "|default:"—" }}</td>
+      <td>
+        {% if t.manager.system_role == 'manager' %}
+        <form method="post" action="{% url 'view-as-start' t.manager.pk %}" class="inline">{% csrf_token %}<button class="link" type="submit">View as manager</button></form> ·
+        {% endif %}
+        <details style="display:inline">
+          <summary style="display:inline">Edit</summary>
+          <form method="post" action="{% url 'console-update-team' t.pk %}" class="row-form" style="margin-top:8px">
+            {% csrf_token %}
+            <div><label for="tn-{{ t.pk }}">Name</label><input type="text" id="tn-{{ t.pk }}" name="name" value="{{ t.name }}" maxlength="150" required></div>
+            <div><label for="tm-{{ t.pk }}">Manager</label>
+              <select id="tm-{{ t.pk }}" name="manager">{% for m in admins_and_managers %}<option value="{{ m.pk }}"{% if m.pk == t.manager_id %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></div>
+            <div><label for="tr-{{ t.pk }}">Region</label>
+              <select id="tr-{{ t.pk }}" name="region">{% for r in regions %}<option value="{{ r.pk }}"{% if r.pk == t.region_id %} selected{% endif %}>{{ r.name }}</option>{% endfor %}</select></div>
+            <button type="submit">Save</button>
+          </form>
+        </details>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<p class="muted">{{ teams|length }} team{{ teams|length|pluralize }}.</p>
+{% else %}
+<p class="card">No teams match.</p>
+{% endif %}
+
+<details class="card">
+  <summary>Add a team</summary>
+  <form method="post" action="{% url 'console-add-team' %}" class="row-form" style="margin-top:8px">
+    {% csrf_token %}
+    <div><label for="nt-name">Name</label><input type="text" id="nt-name" name="name" maxlength="150" required></div>
+    <div><label for="nt-manager">Manager</label>
+      <select id="nt-manager" name="manager" required>{% for m in admins_and_managers %}<option value="{{ m.pk }}">{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></div>
+    <div><label for="nt-region">Region</label>
+      <select id="nt-region" name="region" required>{% for r in regions %}<option value="{{ r.pk }}">{{ r.name }}</option>{% endfor %}</select></div>
+    <button type="submit">Create team</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">A team belongs to one manager and one region. It starts with the Functional, Technical and Systems roles.</p>
+</details>
+
+<h2 class="sec">Managers</h2>
+<div class="card">
+  {% for m in managers %}
+  <div class="item">
+    <span><strong>{{ m.get_full_name|default:m.username }}</strong> <span class="muted">{{ m.username }} · {{ m.team_count }} team{{ m.team_count|pluralize }}</span></span>
+    <form method="post" action="{% url 'view-as-start' m.pk %}" class="inline">{% csrf_token %}<button class="link" type="submit">View as manager</button></form>
+  </div>
+  {% empty %}<p class="muted" style="margin:0">No managers yet.</p>{% endfor %}
+  <details class="item" style="display:block">
+    <summary>Add a manager</summary>
+    <form method="post" action="{% url 'console-add-manager' %}" class="row-form" style="margin-top:8px">
+      {% csrf_token %}
+      <div><label for="m-first">First name</label><input type="text" id="m-first" name="first_name" required></div>
+      <div><label for="m-last">Last name</label><input type="text" id="m-last" name="last_name"></div>
+      <div><label for="m-user">Username</label><input type="text" id="m-user" name="username" required></div>
+      <div><label for="m-email">Email (optional)</label><input type="email" id="m-email" name="email"></div>
+      <button type="submit">Add manager</button>
+    </form>
+  </details>
+</div>
+
+<h2 class="sec">Regions</h2>
+<div class="card">
+  {% for r in regions %}
+  <div class="item">
+    <form method="post" action="{% url 'console-rename-region' r.pk %}" class="row-form">
+      {% csrf_token %}<input type="text" name="name" value="{{ r.name }}" maxlength="100" required aria-label="Region name">
+      <button type="submit" class="secondary">Rename</button>
+    </form>
+    <span class="muted">{{ r.n }} team{{ r.n|pluralize }}</span>
+    {% if not r.n %}<form method="post" action="{% url 'console-delete-region' r.pk %}" class="inline" onsubmit="return confirm('Delete this region?');">{% csrf_token %}<button class="link" type="submit">Delete</button></form>{% endif %}
+  </div>
+  {% endfor %}
+  <form method="post" action="{% url 'console-add-region' %}" class="row-form item">
+    {% csrf_token %}<input type="text" name="name" maxlength="100" required placeholder="New region" aria-label="New region name"><button type="submit">Add region</button>
+  </form>
+</div>
+
+<h2 class="sec">Departments</h2>
+<div class="card">
+  {% for d in departments %}
+  <div class="item">
+    <form method="post" action="{% url 'console-rename-department' d.pk %}" class="row-form">
+      {% csrf_token %}<input type="text" name="name" value="{{ d.name }}" maxlength="100" required aria-label="Department name">
+      <button type="submit" class="secondary">Rename</button>
+    </form>
+    <span class="muted">{{ d.n }} {{ d.n|pluralize:"person,people" }}</span>
+    {% if not d.n %}<form method="post" action="{% url 'console-delete-department' d.pk %}" class="inline" onsubmit="return confirm('Delete this department?');">{% csrf_token %}<button class="link" type="submit">Delete</button></form>{% endif %}
+  </div>
+  {% endfor %}
+  <form method="post" action="{% url 'console-add-department' %}" class="row-form item">
+    {% csrf_token %}<input type="text" name="name" maxlength="100" required placeholder="New department" aria-label="New department name"><button type="submit">Add department</button>
+  </form>
+  <p class="muted" style="margin-bottom:0">A person's department is set on their Team page.</p>
+</div>
+{% endblock %}

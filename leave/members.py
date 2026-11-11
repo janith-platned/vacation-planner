@@ -31,7 +31,7 @@ def _require_member(user: User) -> None:
 
 
 def add_member(
-    *, actor: User, team, resource_role: ResourceRole, username: str, first_name: str, last_name: str, email: str = ""
+    *, actor: User, team, resource_role: ResourceRole, username: str, first_name: str, last_name: str, email: str = "", department=None
 ) -> tuple[User, str]:
     """Create a team member with a temporary password they must change at first sign-in."""
     _require_manager(actor, team)
@@ -52,6 +52,7 @@ def add_member(
                 system_role=SystemRole.MEMBER,
                 team=team,
                 resource_role=resource_role,
+                department=department,
                 must_change_password=True,
             )
             user.full_clean(exclude=["password"])
@@ -67,7 +68,7 @@ def add_member(
 
 def update_member(
     *, actor: User, user: User, first_name: str, last_name: str, email: str, resource_role: ResourceRole,
-    today: Optional[dt.date] = None,
+    today: Optional[dt.date] = None, department=None,
 ) -> User:
     """Change a member's details. Moving them to another role needs them to have no leave from today on,
     because their booked days count against the role they were booked under."""
@@ -92,7 +93,8 @@ def update_member(
         before = {"role": user.resource_role_id, "name": user.get_full_name(), "email": user.email}
         user.first_name, user.last_name, user.email = first_name.strip(), last_name.strip(), email.strip()
         user.resource_role = resource_role
-        user.save(update_fields=["first_name", "last_name", "email", "resource_role"])
+        user.department = department
+        user.save(update_fields=["first_name", "last_name", "email", "resource_role", "department"])
         _audit(
             actor=actor,
             action="member.update",

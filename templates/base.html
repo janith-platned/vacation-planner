@@ -57,7 +57,10 @@
       <a href="{% url 'calendar' %}">Calendar</a>
       <a href="{% url 'book-leave' %}">Book leave</a>
       <a href="{% url 'my-leave' %}">My leave</a>
-      {% if user.system_role != 'member' %}<a href="{% url 'admin:index' %}">Admin</a>{% endif %}
+      {% if user.system_role != 'member' %}
+      <a href="{% url 'approvals' %}">Approvals{% if pending_approvals %} <strong>({{ pending_approvals }})</strong>{% endif %}</a>
+      <a href="{% url 'admin:index' %}">Admin</a>
+      {% endif %}
       <a href="{% url 'password-change' %}">Password</a>
       <span class="muted">{{ user.get_full_name|default:user.username }}</span>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link" type="submit">Sign out</button></form>

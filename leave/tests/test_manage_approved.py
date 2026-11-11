@@ -45,28 +45,37 @@ def dates_form(start, end, **extra):
 
 
 # ---- the list ------------------------------------------------------------------ #
-def test_manager_sees_upcoming_approved_leave_with_both_actions(client, manager, approved):
+def test_approved_leave_is_in_the_table_and_the_detail_page_has_both_actions(client, manager, approved):
     client.force_login(manager)
     body = client.get(reverse("approvals")).content.decode()
-    assert "Approved leave" in body and "Tech1 Tester" in body
-    assert "Modify dates" in body and "Reject this leave" in body
-    assert modify_url(approved) in body and reject_url(approved) in body
+    assert "Tech1 Tester" in body and "Manage" in body
+    detail_url = reverse("request-detail", args=[approved.pk])
+    assert detail_url in body
+    detail = client.get(detail_url).content.decode()
+    assert "Modify dates" in detail and "Reject this leave" in detail
+    assert modify_url(approved) in detail and reject_url(approved) in detail
 
 
-def test_leave_that_has_ended_is_not_listed(client, manager, techs, vacation):
+def test_leave_that_has_ended_is_not_in_the_default_view(client, manager, techs, vacation):
     past = book(techs[1], vacation, TODAY - dt.timedelta(days=3), actor=manager)  # a Friday, already over
     client.force_login(manager)
     body = client.get(reverse("approvals")).content.decode()
-    assert "No upcoming approved leave" in body and "Tech2 Tester" not in body.split("Recently decided")[0]
+    assert "No requests match" in body and "Tech2 Tester" not in body
     assert past.status == Status.APPROVED
+    past_view = client.get(reverse("approvals"), {"when": "past"}).content.decode()
+    assert "Tech2 Tester" in past_view
+    detail = client.get(reverse("request-detail", args=[past.pk])).content.decode()
+    assert "Modify dates" not in detail  # over: history only
 
 
-def test_pending_requests_are_not_in_the_approved_list(client, manager, team, techs, vacation):
+def test_pending_requests_are_not_in_the_default_approved_table(client, manager, team, techs, vacation):
     team.approval_threshold = 0
     team.save()
     book(techs[0], vacation, day(0))
     client.force_login(manager)
-    assert "No upcoming approved leave" in client.get(reverse("approvals")).content.decode()
+    body = client.get(reverse("approvals")).content.decode()
+    assert "No requests match" in body and "Cover holds" in body  # shown as a card, not in the table
+    assert "Tech1 Tester" in client.get(reverse("approvals"), {"status": "pending"}).content.decode().split("All requests")[1]
 
 
 # ---- access ---------------------------------------------------------------------- #
@@ -187,7 +196,7 @@ def test_a_manager_can_override_the_floor_with_a_reason(client, manager, team, r
     approved.refresh_from_db()
     assert approved.start_date == day(2) and approved.floor_overridden
     assert approved.override_reason == "Family emergency" and approved.status == Status.APPROVED
-    assert "approved with a floor override" in client.get(reverse("approvals")).content.decode()
+    assert "Floor override" in client.get(reverse("approvals")).content.decode()
 
 
 def test_override_without_a_reason_is_refused(client, manager, team, roles, techs, vacation, approved):

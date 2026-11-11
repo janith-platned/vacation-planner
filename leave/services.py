@@ -421,7 +421,7 @@ def _apply_booking(
     if request is not None:
         clash = clash.exclude(request=request)
     if clash.exists():
-        raise OverlapError("You already have leave on one or more of these days.")
+        raise OverlapError("There is already leave on one or more of these days.")
 
     counts = leave_type.counts_toward_floor and user.counts_toward_headcount()
     overridden = False
@@ -472,13 +472,15 @@ def book_leave(
     actor: Optional[User] = None,
     override_floor: bool = False,
     override_reason: str = "",
+    comment: str = "",
     today: Optional[dt.date] = None,
 ) -> LeaveRequest:
     """Book leave for `user`.
 
     `actor` defaults to the user. A manager or administrator can book for a team
     member (`actor` != `user`): the booking is approved at once, may be in the past,
-    and may override the floor with a mandatory reason, which is flagged and audited.
+    may use leave types that employees cannot book, may override the floor with a
+    mandatory reason (flagged and audited), and can carry a `comment` for the employee.
     Raises FloorViolationError (with the failing dates) if the floor would be breached.
     """
     actor = actor or user
@@ -515,6 +517,9 @@ def book_leave(
                 override_floor=override_floor,
                 override_reason=override_reason,
             )
+            if privileged and comment.strip():  # a note from the manager, shown to the employee
+                request.decision_comment = comment.strip()
+                request.save(update_fields=["decision_comment", "updated_at"])
             _audit(
                 actor=actor,
                 on_behalf_of=user if privileged else None,
@@ -523,7 +528,7 @@ def book_leave(
                 after={**_snapshot(request), "floor_overridden": request.floor_overridden},
             )
     except IntegrityError as exc:  # unique(user, date) backstop
-        raise OverlapError("You already have leave on one or more of these days.") from exc
+        raise OverlapError("There is already leave on one or more of these days.") from exc
     return request
 
 
@@ -542,31 +547,34 @@ def preview_booking(
     start_date: dt.date,
     end_date: dt.date,
     today: Optional[dt.date] = None,
+    privileged: bool = False,
 ) -> BookingPreview:
-    """Read-only look at what book_leave would do for the user themselves.
+    """Read-only look at what book_leave would do for `user`.
 
+    With `privileged=True` it previews a manager booking for the employee: past
+    dates and employee-restricted leave types are allowed and the result is approved.
     Advisory only: it takes no lock, so book_leave re-checks at submit time.
     """
     try:
         if user.team_id is None or user.resource_role_id is None:
-            raise InvalidRequest("Your account has no team or resource role.")
+            raise InvalidRequest("The account has no team or resource role.")
         team = user.team
-        _validate_leave_type(leave_type, team, privileged=False)
+        _validate_leave_type(leave_type, team, privileged=privileged)
         if end_date < start_date:
             raise InvalidRequest("The end date is before the start date.")
-        if start_date < (today or today_for(team)):
+        if start_date < (today or today_for(team)) and not privileged:
             raise InvalidRequest("Leave cannot start in the past.")
         dates = working_days(team, start_date, end_date)
         if not dates:
             raise NoWorkingDaysError("The selected dates contain no working days.")
         if LeaveDay.objects.filter(user=user, date__in=dates).exists():
-            raise OverlapError("You already have leave on one or more of these days.")
+            raise OverlapError("There is already leave on one or more of these days.")
     except LeaveError as exc:
         return BookingPreview(0, (), None, str(exc))
     violations: tuple = ()
     if leave_type.counts_toward_floor and user.counts_toward_headcount():
         violations = tuple(check_floor(team, user.resource_role, dates))
-    status = None if violations else _initial_status(team, leave_type, len(dates), privileged=False)
+    status = None if violations else _initial_status(team, leave_type, len(dates), privileged=privileged)
     return BookingPreview(len(dates), violations, status, None)
 
 

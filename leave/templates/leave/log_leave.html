@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Log leave for an employee · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+  .grid .wide { grid-column: 1 / -1; }
+  .grid input[type=text], .grid select, .grid input[type=date] { width: 100%; }
+  #check { margin: 12px 0; min-height: 1.5em; }
+  .cover-ok { border-left: 4px solid var(--ok-b); padding-left: 12px; }
+</style>
+{% endblock %}
+{% block content %}
+<p><a href="{% url 'approvals' %}">&larr; Back to approvals</a></p>
+<h1>Log leave for an employee</h1>
+
+{% if not has_employees %}
+<p class="card">There are no active employees with a role in the teams you manage.</p>
+{% else %}
+<p class="muted">Leave logged here is approved straight away and the employee sees who logged it. Past dates and restricted leave types are allowed; the floor still applies unless you override it with a reason.</p>
+
+{% if violations %}
+<p class="warn" role="alert">
+  <strong>Not logged.</strong> This would take the role below its floor on: {{ violation_text }}.
+  Tick "Override the floor", give a reason, and submit again to go ahead.
+</p>
+{% endif %}
+
+<form method="post" class="card" id="log-form" data-check-url="{% url 'manager-check' %}">
+  {% csrf_token %}
+  {{ form.non_field_errors }}
+  <div class="grid">
+    <div class="wide">
+      <label for="{{ form.employee.id_for_label }}">Employee</label>
+      {{ form.employee }}{{ form.employee.errors }}
+    </div>
+    <div>
+      <label for="{{ form.leave_type.id_for_label }}">Leave type</label>
+      {{ form.leave_type }}{{ form.leave_type.errors }}
+    </div>
+    <div>
+      <label for="{{ form.start_date.id_for_label }}">First day</label>
+      {{ form.start_date }}{{ form.start_date.errors }}
+    </div>
+    <div>
+      <label for="{{ form.end_date.id_for_label }}">Last day</label>
+      {{ form.end_date }}{{ form.end_date.errors }}
+    </div>
+    <div class="wide">
+      <label for="{{ form.comment.id_for_label }}">Note to the employee (optional)</label>
+      {{ form.comment }}{{ form.comment.errors }}
+    </div>
+    <div class="wide">
+      <label for="{{ form.override_floor.id_for_label }}">{{ form.override_floor }} Override the floor if these dates breach it</label>
+      <input type="text" name="override_reason" id="{{ form.override_reason.id_for_label }}" maxlength="500" value="{{ form.override_reason.value|default:'' }}" placeholder="Reason for the override (required if ticked)" aria-label="Reason for the override">
+      {{ form.override_reason.errors }}
+    </div>
+  </div>
+  <div id="check" role="status" aria-live="polite"></div>
+  <button type="submit">Log approved leave</button>
+</form>
+
+{{ employee_team|json_script:"employee-team" }}
+{{ type_team|json_script:"type-team" }}
+<script>
+(function () {
+  var form = document.getElementById("log-form");
+  var emp = form.querySelector("[name=employee]");
+  var type = form.querySelector("[name=leave_type]");
+  var start = form.querySelector("[name=start_date]");
+  var end = form.querySelector("[name=end_date]");
+  var out = document.getElementById("check");
+  var empTeam = JSON.parse(document.getElementById("employee-team").textContent);
+  var typeTeam = JSON.parse(document.getElementById("type-team").textContent);
+  var allTypes = Array.prototype.slice.call(type.options).map(function (o) { return o; });
+  var timer = null;
+
+  function filterTypes() {
+    var team = empTeam[emp.value];
+    var keep = type.value;
+    type.innerHTML = "";
+    allTypes.forEach(function (o) {
+      if (!team || String(typeTeam[o.value]) === String(team)) type.appendChild(o);
+    });
+    if (Array.prototype.some.call(type.options, function (o) { return o.value === keep; })) type.value = keep;
+  }
+
+  function fmt(iso) {
+    var d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  }
+
+  function check() {
+    out.className = "";
+    if (!emp.value || !type.value || !start.value || !end.value) { out.textContent = ""; return; }
+    if (end.value < start.value) { out.textContent = "The last day is before the first day."; return; }
+    var qs = new URLSearchParams({ employee: emp.value, leave_type: type.value, start: start.value, end: end.value });
+    fetch(form.dataset.checkUrl + "?" + qs.toString(), { credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (d.error) { out.textContent = ""; return; }
+        if (d.problem) { out.className = "warn"; out.textContent = d.problem; return; }
+        var days = d.working_days + " working day" + (d.working_days === 1 ? "" : "s");
+        if (d.violations.length) {
+          out.className = "warn";
+          out.textContent = days + ". Below the floor on: " + d.violations.map(function (v) {
+            return fmt(v.date) + " (floor " + v.floor + ", " + v.available_after + " available)";
+          }).join("; ") + ". An override with a reason is needed.";
+        } else {
+          out.className = "cover-ok";
+          out.textContent = days + ". Cover holds on every day.";
+        }
+      })
+      .catch(function () { out.textContent = ""; });
+  }
+
+  function later() { clearTimeout(timer); timer = setTimeout(check, 250); }
+  emp.addEventListener("change", function () { filterTypes(); later(); });
+  [type, start, end].forEach(function (el) { el.addEventListener("change", later); });
+  start.addEventListener("change", function () { if (!end.value || end.value < start.value) end.value = start.value; later(); });
+  filterTypes();
+  check();
+})();
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Leave request · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
+  .detail dt { color: var(--muted); }
+  .detail dd { margin: 0; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--nofloor); }
+  .badge.approved { background: var(--ok); border-color: var(--ok-b); }
+  .badge.pending { background: var(--low); border-color: var(--low-b); }
+  .badge.rejected, .badge.cancelled_by_manager { background: var(--full); border-color: var(--full-b); }
+  .cover-ok { border-left: 4px solid var(--ok-b); padding-left: 12px; }
+  .actions form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; margin-top: 8px; }
+  .actions .grow { flex: 1 1 260px; }
+  .actions label { margin: 0 0 4px; }
+  .actions input[type=text] { width: 100%; }
+  details.action { margin-top: 8px; }
+  details.action summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  ol.history { list-style: none; padding: 0; margin: 0; }
+  ol.history li { padding: 6px 0; border-bottom: 1px solid var(--border); }
+</style>
+{% endblock %}
+{% block content %}
+<p><a href="{% url 'approvals' %}">&larr; Back to approvals</a></p>
+<h1>{{ r.user.get_full_name|default:r.user.username }} <span class="badge {{ r.status }}">{{ r.get_status_display }}</span></h1>
+
+<section class="card detail" aria-label="Request details">
+  <dl>
+    <dt>Team</dt><dd>{{ r.team.name }} ({{ r.team.region.name }})</dd>
+    <dt>Role</dt><dd>{{ role }}</dd>
+    <dt>Dates</dt><dd>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</dd>
+    <dt>Working days</dt><dd>{{ r.working_days }}{% if days %} ({% for d in days %}{{ d|date:"j M" }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}</dd>
+    <dt>Leave type</dt><dd>{{ r.leave_type.name }}</dd>
+    {% if r.floor_overridden %}<dt>Floor</dt><dd><strong>Floor override</strong></dd>{% endif %}
+    {% if r.decision_comment %}<dt>Note</dt><dd>{{ r.decision_comment }}</dd>{% endif %}
+  </dl>
+</section>
+
+{% if issues %}
+<p class="warn" role="note">
+  <strong>Below the floor on {{ issues|length }} day{{ issues|length|pluralize }}:</strong>
+  {% for c in issues %}{{ c.date|date:"D j M" }} (floor {{ c.floor }}, {{ c.available }} available){% if not forloop.last %}; {% endif %}{% endfor %}.
+</p>
+{% elif can_decide or can_change %}
+<p class="cover-ok">Cover holds on every day of this request.</p>
+{% endif %}
+
+{% if can_decide or can_change %}
+<section class="card actions" aria-label="Actions">
+  {% if can_decide %}
+  <form method="post" action="{% url 'decide-request' r.pk %}">
+    {% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div class="grow"><label for="comment">Comment (optional)</label><input type="text" id="comment" name="comment" maxlength="500"></div>
+    <button type="submit" name="decision" value="approve">Approve</button>
+    <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
+  </form>
+  {% endif %}
+
+  {% if can_change %}
+  <details class="action">
+    <summary>Modify dates</summary>
+    <form method="post" action="{% url 'modify-request' r.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div><label for="start">First day</label><input type="date" id="start" name="start_date" value="{{ r.start_date|date:'Y-m-d' }}" required></div>
+      <div><label for="end">Last day</label><input type="date" id="end" name="end_date" value="{{ r.end_date|date:'Y-m-d' }}" required></div>
+      <div class="grow"><label for="note">Note to the employee (optional)</label><input type="text" id="note" name="comment" maxlength="500"></div>
+      <div class="grow">
+        <label for="ovr"><input type="checkbox" id="ovr" name="override_floor" value="1"> Override the floor if the new dates breach it</label>
+        <input type="text" name="override_reason" maxlength="500" placeholder="Reason for the override (required if ticked)" aria-label="Reason for the override">
+      </div>
+      <button type="submit">Save changes</button>
+    </form>
+  </details>
+
+  <details class="action">
+    <summary>Reject this leave</summary>
+    <form method="post" action="{% url 'reject-approved' r.pk %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="grow"><label for="why">Reason (required, shown to the employee)</label><input type="text" id="why" name="reason" maxlength="500" required></div>
+      <button type="submit" class="secondary">Reject and release the days</button>
+    </form>
+  </details>
+  {% endif %}
+</section>
+{% endif %}
+
+<h2>History</h2>
+{% if history %}
+<ol class="history">
+  {% for h in history %}
+  <li>
+    <strong>{{ h.label }}</strong> by {{ h.who }}{% if h.on_behalf_of %} on behalf of {{ h.on_behalf_of }}{% endif %}
+    <span class="muted">· {{ h.when|date:"j M Y, H:i" }}</span>
+    {% if h.detail %}<br><span class="muted">{{ h.detail }}</span>{% endif %}
+  </li>
+  {% endfor %}
+</ol>
+{% else %}
+<p class="muted">No history recorded.</p>
+{% endif %}
+{% endblock %}

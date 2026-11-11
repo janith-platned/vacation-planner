@@ -2,6 +2,8 @@
 {% block title %}Approvals · Vacation Planner{% endblock %}
 {% block head %}
 <style>
+  .page-head { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .page-head h1 { margin: 8px 0; }
   .request h2 { font-size: 1.05rem; margin: 0 0 4px; }
   .request .meta { margin: 0 0 8px; }
   .request form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
@@ -9,26 +11,34 @@
   .request form label { margin: 0 0 4px; }
   .request form input[type=text] { width: 100%; }
   .cover-ok { border-left: 4px solid var(--ok-b); padding-left: 12px; }
-  details.action { margin-top: 8px; }
-  details.action summary { cursor: pointer; font-weight: 600; color: var(--accent); }
-  details.action form { margin-top: 8px; }
-  .filter { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
-  .filter label { margin: 0; }
+  .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 8px 0 12px; }
+  .filters > div { min-width: 0; }
+  .filters label { margin: 0 0 4px; font-size: .85rem; }
+  .filters input[type=search] { min-width: 200px; }
+  .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--nofloor); white-space: nowrap; }
+  .badge.approved { background: var(--ok); border-color: var(--ok-b); }
+  .badge.pending { background: var(--low); border-color: var(--low-b); }
+  .badge.rejected, .badge.cancelled_by_manager { background: var(--full); border-color: var(--full-b); }
+  .flag { font-size: .8rem; color: var(--low-b); font-weight: 600; white-space: nowrap; }
+  .table-wrap { overflow-x: auto; }
+  table.list td.num { text-align: right; white-space: nowrap; }
+  table.list td.act { text-align: right; white-space: nowrap; }
+  .pager { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .pager .links { display: flex; gap: 8px; }
+  @media (max-width: 640px) {
+    table.list thead { display: none; }
+    table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+    table.list tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: var(--surface); }
+    table.list td { border: 0; padding: 2px 0; text-align: left !important; }
+    table.list td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); }
+  }
 </style>
 {% endblock %}
 {% block content %}
-<h1>Approvals</h1>
-
-{% if teams|length > 1 %}
-<form method="get" class="filter">
-  <label for="team">Team</label>
-  <select id="team" name="team" onchange="this.form.submit()">
-    <option value="">All my teams</option>
-    {% for t in teams %}<option value="{{ t.pk }}"{% if selected_team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
-  </select>
-  <noscript><button type="submit">Filter</button></noscript>
-</form>
-{% endif %}
+<div class="page-head">
+  <h1>Approvals</h1>
+  <a class="button" href="{% url 'log-leave' %}">Log leave for an employee</a>
+</div>
 
 {% if pending %}
   <p class="muted">{{ pending|length }} request{{ pending|length|pluralize }} waiting. Cover is checked against today's floors.</p>
@@ -52,6 +62,7 @@
     {% endif %}
     <form method="post" action="{% url 'decide-request' r.pk %}">
       {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <div class="grow">
         <label for="comment-{{ r.pk }}">Comment (optional, shown to {{ r.user.first_name|default:"the employee" }})</label>
         <input type="text" id="comment-{{ r.pk }}" name="comment" maxlength="500">
@@ -66,66 +77,72 @@
   <p class="card">Nothing is waiting for approval.</p>
 {% endif %}
 
-<h2>Approved leave</h2>
-{% if approved %}
-  <p class="muted">
-    Upcoming and current approved leave. You can change the dates (checked against the floor like a new booking) or reject it; the employee sees your note.
-    {% if approved_total > approved|length %}Showing the first {{ approved|length }} of {{ approved_total }}; use the team filter to narrow it.{% endif %}
-  </p>
-  {% for r in approved %}
-  <section class="card request" aria-labelledby="appr-{{ r.pk }}">
-    <h3 id="appr-{{ r.pk }}" style="font-size:1.05rem;margin:0 0 4px">{{ r.user.get_full_name|default:r.user.username }} · {{ r.user.resource_role.name }} · {{ r.team.name }} ({{ r.team.region.name }})</h3>
-    <p class="meta">
-      {{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}
-      · {{ r.working_days }} working day{{ r.working_days|pluralize }} · {{ r.leave_type.name }}
-      {% if r.floor_overridden %}· <strong>approved with a floor override</strong>{% endif %}
-    </p>
-    {% if r.decision_comment %}<p class="muted">Note to employee: {{ r.decision_comment }}</p>{% endif %}
+<h2>All requests</h2>
+<form method="get" class="filters" role="search" aria-label="Filter requests">
+  <div>
+    <label for="q">Search by name</label>
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Tom">
+  </div>
+  {% if teams|length > 1 %}
+  <div>
+    <label for="team">Team</label>
+    <select id="team" name="team">
+      <option value="">All my teams</option>
+      {% for t in teams %}<option value="{{ t.pk }}"{% if selected_team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+    </select>
+  </div>
+  {% endif %}
+  <div>
+    <label for="role">Role</label>
+    <select id="role" name="role">
+      <option value="">All roles</option>
+      {% for name in roles %}<option value="{{ name }}"{% if role == name %} selected{% endif %}>{{ name }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="status">Status</label>
+    <select id="status" name="status">
+      {% for value, label in status_labels %}<option value="{{ value }}"{% if status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <div>
+    <label for="when">When</label>
+    <select id="when" name="when">
+      {% for value, label in when_labels %}<option value="{{ value }}"{% if when == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+  </div>
+  <button type="submit">Apply</button>
+  {% if filtered %}<a href="{% url 'approvals' %}">Reset</a>{% endif %}
+</form>
 
-    <details class="action">
-      <summary>Modify dates</summary>
-      <form method="post" action="{% url 'modify-request' r.pk %}">
-        {% csrf_token %}
-        <div><label for="start-{{ r.pk }}">First day</label><input type="date" id="start-{{ r.pk }}" name="start_date" value="{{ r.start_date|date:'Y-m-d' }}" required></div>
-        <div><label for="end-{{ r.pk }}">Last day</label><input type="date" id="end-{{ r.pk }}" name="end_date" value="{{ r.end_date|date:'Y-m-d' }}" required></div>
-        <div class="grow"><label for="note-{{ r.pk }}">Note to the employee (optional)</label><input type="text" id="note-{{ r.pk }}" name="comment" maxlength="500"></div>
-        <div class="grow">
-          <label for="ovr-{{ r.pk }}"><input type="checkbox" id="ovr-{{ r.pk }}" name="override_floor" value="1"> Override the floor if the new dates breach it</label>
-          <input type="text" name="override_reason" maxlength="500" placeholder="Reason for the override (required if ticked)" aria-label="Reason for the override">
-        </div>
-        <button type="submit">Save changes</button>
-      </form>
-    </details>
-
-    <details class="action">
-      <summary>Reject this leave</summary>
-      <form method="post" action="{% url 'reject-approved' r.pk %}">
-        {% csrf_token %}
-        <div class="grow"><label for="why-{{ r.pk }}">Reason (required, shown to the employee)</label><input type="text" id="why-{{ r.pk }}" name="reason" maxlength="500" required></div>
-        <button type="submit" class="secondary">Reject and release the days</button>
-      </form>
-    </details>
-  </section>
-  {% endfor %}
-{% else %}
-  <p class="card">No upcoming approved leave.</p>
-{% endif %}
-
-{% if recent %}
-<h2>Recently decided</h2>
+{% if page_obj.object_list %}
+<div class="table-wrap">
 <table class="list">
-  <thead><tr><th scope="col">Who</th><th scope="col">Dates</th><th scope="col">Decision</th><th scope="col">By</th><th scope="col">Comment</th></tr></thead>
+  <thead>
+    <tr><th scope="col">Employee</th><th scope="col">Dates</th><th scope="col">Days</th><th scope="col">Type</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr>
+  </thead>
   <tbody>
-  {% for r in recent %}
+  {% for r in page_obj.object_list %}
     <tr>
-      <td>{{ r.user.get_full_name|default:r.user.username }}<br><span class="muted">{{ r.team.name }}</span></td>
-      <td>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
-      <td><span class="status">{{ r.get_status_display }}</span><br><span class="muted">{{ r.decided_at|date:"j M Y" }}</span></td>
-      <td>{{ r.decided_by.get_full_name|default:r.decided_by.username }}</td>
-      <td>{{ r.decision_comment|default:"" }}</td>
+      <td><a href="{% url 'request-detail' r.pk %}">{{ r.user.get_full_name|default:r.user.username }}</a><br><span class="muted">{{ r.user.resource_role.name }} · {{ r.team.name }}</span></td>
+      <td data-label="Dates">{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td class="num" data-label="Working days">{{ r.working_days }}</td>
+      <td data-label="Type">{{ r.leave_type.name }}</td>
+      <td><span class="badge {{ r.status }}">{{ r.get_status_display }}</span>{% if r.floor_overridden %} <span class="flag">Floor override</span>{% endif %}</td>
+      <td class="act"><a href="{% url 'request-detail' r.pk %}">{% if r.status == 'approved' %}Manage{% else %}View{% endif %}</a></td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
+</div>
+<nav class="pager" aria-label="Pages">
+  <span class="muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+  <span class="links">
+    {% if page_obj.has_previous %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+    {% if page_obj.has_next %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+  </span>
+</nav>
+{% else %}
+<p class="card">No requests match these filters.</p>
 {% endif %}
 {% endblock %}

@@ -59,6 +59,8 @@
     </div>
     <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="manager_counts" value="1"{% if team.manager_counts_toward_headcount %} checked{% endif %}> The manager counts toward the team's headcount</label>
   </div>
+  {% if team.notify_manager_new_request %}<input type="hidden" name="notify_manager" value="1">{% endif %}
+  {% if team.notify_employee_updates %}<input type="hidden" name="notify_employee" value="1">{% endif %}
   <p class="muted">Changing working days, holidays or the time zone does not move leave that is already booked.</p>
   <button type="submit">Save rules</button>
 </form>
@@ -129,6 +131,21 @@
 {% endif %}
 
 <h2 class="sec">Notifications</h2>
-<p class="card muted">Email notifications are not built yet. They will be configured here.</p>
+<form method="post" action="{% url 'save-rules' %}" class="card">
+  {% csrf_token %}
+  <input type="hidden" name="team" value="{{ team.pk }}">
+  {# the rules form fields are resubmitted unchanged so this form saves only the toggles #}
+  <input type="hidden" name="approval_mode" value="{% if never_approve %}never{% else %}threshold{% endif %}">
+  <input type="hidden" name="approval_threshold" value="{% if never_approve %}5{% else %}{{ team.approval_threshold }}{% endif %}">
+  {% for num, name in weekdays %}{% if num in team.working_days %}<input type="hidden" name="working_days" value="{{ num }}">{% endif %}{% endfor %}
+  <input type="hidden" name="timezone" value="{{ team.timezone }}">
+  {% if team.manager_counts_toward_headcount %}<input type="hidden" name="manager_counts" value="1">{% endif %}
+  <div class="checks" style="flex-direction:column">
+    <label><input type="checkbox" name="notify_manager" value="1"{% if team.notify_manager_new_request %} checked{% endif %}> Email the manager when a request needs approval</label>
+    <label><input type="checkbox" name="notify_employee" value="1"{% if team.notify_employee_updates %} checked{% endif %}> Email employees when a manager approves, rejects, changes, cancels or logs their leave</label>
+  </div>
+  <p class="muted">People without an email address are skipped. Emails contain only the person's own leave, never colleagues' names or counts.</p>
+  <button type="submit">Save notifications</button>
+</form>
 {% endif %}
 {% endblock %}

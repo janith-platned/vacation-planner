@@ -94,6 +94,8 @@ def save_rules_view(request):
             working_days=[int(d) for d in request.POST.getlist("working_days")],
             timezone=request.POST.get("timezone", team.timezone),
             manager_counts_toward_headcount=request.POST.get("manager_counts") == "1",
+            notify_manager_new_request=request.POST.get("notify_manager") == "1",
+            notify_employee_updates=request.POST.get("notify_employee") == "1",
         )
 
     return _run(request, team, action, "Team rules saved. Leave that is already booked is not changed.")

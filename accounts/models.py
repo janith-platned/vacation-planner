@@ -53,6 +53,9 @@ class Team(models.Model):
     working_days = models.JSONField(default=default_working_days)
     timezone = models.CharField(max_length=64, default="America/New_York")
     manager_counts_toward_headcount = models.BooleanField(default=False)
+    # Email notifications (see leave/notifications.py).
+    notify_manager_new_request = models.BooleanField(default=True)
+    notify_employee_updates = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

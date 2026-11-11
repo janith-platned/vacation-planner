@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Approvals · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .request h2 { font-size: 1.05rem; margin: 0 0 4px; }
+  .request .meta { margin: 0 0 8px; }
+  .request form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+  .request form .grow { flex: 1 1 260px; }
+  .request form label { margin: 0 0 4px; }
+  .request form input[type=text] { width: 100%; }
+  .cover-ok { border-left: 4px solid var(--ok-b); padding-left: 12px; }
+  .filter { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
+  .filter label { margin: 0; }
+</style>
+{% endblock %}
+{% block content %}
+<h1>Approvals</h1>
+
+{% if teams|length > 1 %}
+<form method="get" class="filter">
+  <label for="team">Team</label>
+  <select id="team" name="team" onchange="this.form.submit()">
+    <option value="">All my teams</option>
+    {% for t in teams %}<option value="{{ t.pk }}"{% if selected_team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }} ({{ t.region.name }})</option>{% endfor %}
+  </select>
+  <noscript><button type="submit">Filter</button></noscript>
+</form>
+{% endif %}
+
+{% if pending %}
+  <p class="muted">{{ pending|length }} request{{ pending|length|pluralize }} waiting. Cover is checked against today's floors.</p>
+  {% for item in pending %}
+  {% with r=item.request %}
+  <section class="card request" aria-labelledby="req-{{ r.pk }}">
+    <h2 id="req-{{ r.pk }}">{{ r.user.get_full_name|default:r.user.username }} · {{ item.role }} · {{ r.team.name }} ({{ r.team.region.name }})</h2>
+    <p class="meta">
+      {{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}
+      · {{ r.working_days }} working day{{ r.working_days|pluralize }} · {{ r.leave_type.name }}
+      · requested {{ r.created_at|date:"j M Y" }}
+    </p>
+    {% if item.issues %}
+    <p class="warn" role="note">
+      <strong>Below the floor on {{ item.issues|length }} day{{ item.issues|length|pluralize }}:</strong>
+      {% for c in item.issues %}{{ c.date|date:"D j M" }} (floor {{ c.floor }}, {{ c.available }} available){% if not forloop.last %}; {% endif %}{% endfor %}.
+      You can still approve, or reject and ask for different dates.
+    </p>
+    {% else %}
+    <p class="cover-ok">Cover holds on every day of this request.</p>
+    {% endif %}
+    <form method="post" action="{% url 'decide-request' r.pk %}">
+      {% csrf_token %}
+      <div class="grow">
+        <label for="comment-{{ r.pk }}">Comment (optional, shown to {{ r.user.first_name|default:"the employee" }})</label>
+        <input type="text" id="comment-{{ r.pk }}" name="comment" maxlength="500">
+      </div>
+      <button type="submit" name="decision" value="approve">Approve</button>
+      <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
+    </form>
+  </section>
+  {% endwith %}
+  {% endfor %}
+{% else %}
+  <p class="card">Nothing is waiting for approval.</p>
+{% endif %}
+
+{% if recent %}
+<h2>Recently decided</h2>
+<table class="list">
+  <thead><tr><th scope="col">Who</th><th scope="col">Dates</th><th scope="col">Decision</th><th scope="col">By</th><th scope="col">Comment</th></tr></thead>
+  <tbody>
+  {% for r in recent %}
+    <tr>
+      <td>{{ r.user.get_full_name|default:r.user.username }}<br><span class="muted">{{ r.team.name }}</span></td>
+      <td>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td><span class="status">{{ r.get_status_display }}</span><br><span class="muted">{{ r.decided_at|date:"j M Y" }}</span></td>
+      <td>{{ r.decided_by.get_full_name|default:r.decided_by.username }}</td>
+      <td>{{ r.decision_comment|default:"" }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

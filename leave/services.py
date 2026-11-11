@@ -237,6 +237,49 @@ def find_breaches(team: Team, start: dt.date, end: dt.date, *, actor: User) -> l
     return breaches
 
 
+@dataclass(frozen=True)
+class CoverDay:
+    """A day of a request on which the requester's role is below its floor right now."""
+
+    date: dt.date
+    floor: int
+    available: int
+
+
+def cover_issues(request: LeaveRequest) -> list[CoverDay]:
+    """Days of an active request where the role is currently below its floor.
+
+    A pending request already reserves its days, so this is what the manager is
+    deciding on: a floor raised after the request was made shows up here.
+    Manager-facing only. Requests whose leave type ignores floors have no issues.
+    """
+    rows = list(request.days.filter(counts_toward_floor=True).order_by("date").values_list("date", "resource_role_id"))
+    if not rows:
+        return []
+    role = ResourceRole.objects.get(pk=rows[0][1])
+    team = request.team
+    dates = [d for d, _ in rows]
+    floors = effective_floors(team, role, dates)
+    head = headcount(team, role)
+    booked = booked_counts(team, role, dates)
+    issues = []
+    for day in dates:
+        floor = floors[day]
+        available = head - booked.get(day, 0)
+        if floor is not None and available < floor:
+            issues.append(CoverDay(day, floor, available))
+    return issues
+
+
+def managed_teams(user: User):
+    """Teams the user may manage: all for an administrator, their own for a manager."""
+    if user.system_role == SystemRole.ADMIN:
+        return Team.objects.select_related("region").all()
+    if user.system_role == SystemRole.MANAGER:
+        return Team.objects.select_related("region").filter(manager=user)
+    return Team.objects.none()
+
+
 # --------------------------------------------------------------------------- #
 # Managing floors (manager or administrator)
 # --------------------------------------------------------------------------- #

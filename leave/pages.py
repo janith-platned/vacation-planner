@@ -15,7 +15,7 @@ from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
-from accounts.models import SystemRole, Team
+from accounts.models import Team
 
 from . import services
 from .calendar_grid import build_month_grid
@@ -24,14 +24,6 @@ from .forms import BookLeaveForm
 from .models import LeaveDay, LeaveRequest
 
 Status = LeaveRequest.Status
-
-
-def _managed_teams(user):
-    if user.system_role == SystemRole.ADMIN:
-        return Team.objects.select_related("region").all()
-    if user.system_role == SystemRole.MANAGER:
-        return user.managed_teams.select_related("region").all()
-    return Team.objects.none()
 
 
 def _parse_month(value: str | None, fallback: dt.date) -> tuple[int, int]:
@@ -50,7 +42,7 @@ def _shift_month(year: int, month: int, delta: int) -> str:
 @login_required
 def calendar_page(request):
     user = request.user
-    managed = list(_managed_teams(user))
+    managed = list(services.managed_teams(user))
     team_param = request.GET.get("team")
 
     if team_param:

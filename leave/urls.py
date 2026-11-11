@@ -1,8 +1,10 @@
 from django.urls import path
 
-from . import pages, views
+from . import manage_pages, pages, views
 
 urlpatterns = [
+    path("manage/approvals/", manage_pages.approvals_page, name="approvals"),
+    path("manage/approvals/<int:pk>/decide/", manage_pages.decide_request_view, name="decide-request"),
     path("calendar/", pages.calendar_page, name="calendar"),
     path("leave/book/", pages.book_page, name="book-leave"),
     path("leave/mine/", pages.my_leave_page, name="my-leave"),

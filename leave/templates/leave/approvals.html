@@ -9,6 +9,9 @@
   .request form label { margin: 0 0 4px; }
   .request form input[type=text] { width: 100%; }
   .cover-ok { border-left: 4px solid var(--ok-b); padding-left: 12px; }
+  details.action { margin-top: 8px; }
+  details.action summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  details.action form { margin-top: 8px; }
   .filter { display: flex; gap: 8px; align-items: center; margin-bottom: 16px; }
   .filter label { margin: 0; }
 </style>
@@ -61,6 +64,51 @@
   {% endfor %}
 {% else %}
   <p class="card">Nothing is waiting for approval.</p>
+{% endif %}
+
+<h2>Approved leave</h2>
+{% if approved %}
+  <p class="muted">
+    Upcoming and current approved leave. You can change the dates (checked against the floor like a new booking) or reject it; the employee sees your note.
+    {% if approved_total > approved|length %}Showing the first {{ approved|length }} of {{ approved_total }}; use the team filter to narrow it.{% endif %}
+  </p>
+  {% for r in approved %}
+  <section class="card request" aria-labelledby="appr-{{ r.pk }}">
+    <h3 id="appr-{{ r.pk }}" style="font-size:1.05rem;margin:0 0 4px">{{ r.user.get_full_name|default:r.user.username }} · {{ r.user.resource_role.name }} · {{ r.team.name }} ({{ r.team.region.name }})</h3>
+    <p class="meta">
+      {{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}
+      · {{ r.working_days }} working day{{ r.working_days|pluralize }} · {{ r.leave_type.name }}
+      {% if r.floor_overridden %}· <strong>approved with a floor override</strong>{% endif %}
+    </p>
+    {% if r.decision_comment %}<p class="muted">Note to employee: {{ r.decision_comment }}</p>{% endif %}
+
+    <details class="action">
+      <summary>Modify dates</summary>
+      <form method="post" action="{% url 'modify-request' r.pk %}">
+        {% csrf_token %}
+        <div><label for="start-{{ r.pk }}">First day</label><input type="date" id="start-{{ r.pk }}" name="start_date" value="{{ r.start_date|date:'Y-m-d' }}" required></div>
+        <div><label for="end-{{ r.pk }}">Last day</label><input type="date" id="end-{{ r.pk }}" name="end_date" value="{{ r.end_date|date:'Y-m-d' }}" required></div>
+        <div class="grow"><label for="note-{{ r.pk }}">Note to the employee (optional)</label><input type="text" id="note-{{ r.pk }}" name="comment" maxlength="500"></div>
+        <div class="grow">
+          <label for="ovr-{{ r.pk }}"><input type="checkbox" id="ovr-{{ r.pk }}" name="override_floor" value="1"> Override the floor if the new dates breach it</label>
+          <input type="text" name="override_reason" maxlength="500" placeholder="Reason for the override (required if ticked)" aria-label="Reason for the override">
+        </div>
+        <button type="submit">Save changes</button>
+      </form>
+    </details>
+
+    <details class="action">
+      <summary>Reject this leave</summary>
+      <form method="post" action="{% url 'reject-approved' r.pk %}">
+        {% csrf_token %}
+        <div class="grow"><label for="why-{{ r.pk }}">Reason (required, shown to the employee)</label><input type="text" id="why-{{ r.pk }}" name="reason" maxlength="500" required></div>
+        <button type="submit" class="secondary">Reject and release the days</button>
+      </form>
+    </details>
+  </section>
+  {% endfor %}
+{% else %}
+  <p class="card">No upcoming approved leave.</p>
 {% endif %}
 
 {% if recent %}

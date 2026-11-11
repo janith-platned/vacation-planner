@@ -579,12 +579,15 @@ def modify_leave(
     leave_type: Optional[LeaveType] = None,
     override_floor: bool = False,
     override_reason: str = "",
+    comment: str = "",
     today: Optional[dt.date] = None,
 ) -> LeaveRequest:
     """Change the dates (or type) of an active request.
 
     The change is validated as a new request with the old days released, then
-    replaces the original atomically. If it fails, nothing changes. Approval restarts.
+    replaces the original atomically. If it fails, nothing changes. When the owner
+    edits, approval restarts. When a manager edits, the result is approved at once,
+    may override the floor with a reason, and can carry a `comment` for the employee.
     """
     team = request.team
     is_owner = actor.pk == request.user_id
@@ -622,13 +625,16 @@ def modify_leave(
                 override_floor=override_floor,
                 override_reason=override_reason,
             )
+            if privileged and comment.strip():  # a note from the manager, shown to the employee
+                updated.decision_comment = comment.strip()
+                updated.save(update_fields=["decision_comment", "updated_at"])
             _audit(
                 actor=actor,
                 on_behalf_of=user if privileged else None,
                 action="leave.modify",
                 entity=updated,
                 before=before,
-                after=_snapshot(updated),
+                after={**_snapshot(updated), "floor_overridden": updated.floor_overridden, "comment": updated.decision_comment},
             )
     except IntegrityError as exc:
         raise OverlapError("You already have leave on one or more of these days.") from exc
@@ -660,6 +666,35 @@ def decide_request(*, request: LeaveRequest, actor: User, approve: bool, comment
             before=before,
             after=_snapshot(locked),
         )
+    return locked
+
+
+def revoke_approved_leave(
+    *, request: LeaveRequest, actor: User, reason: str, today: Optional[dt.date] = None
+) -> LeaveRequest:
+    """A manager rejects leave that was already approved. The days are released.
+
+    The employee was told yes, so a reason is required and is shown to them.
+    Leave that has already ended is history and cannot be rejected.
+    """
+    _require_manager(actor, request.team)
+    if not reason.strip():
+        raise InvalidRequest("A reason is required to reject approved leave.")
+    today = today or today_for(request.team)
+    with transaction.atomic():
+        locked = LeaveRequest.objects.select_for_update().get(pk=request.pk)
+        if locked.status != Status.APPROVED:
+            raise InvalidState("Only approved leave can be rejected here.")
+        if locked.end_date < today:
+            raise InvalidState("Leave that has already ended cannot be rejected.")
+        before = _snapshot(locked)
+        locked.status = Status.REJECTED
+        locked.decided_by = actor
+        locked.decided_at = timezone.now()
+        locked.decision_comment = reason.strip()
+        locked.save()
+        locked.days.all().delete()
+        _audit(actor=actor, action="leave.revoke", entity=locked, before=before, after=_snapshot(locked))
     return locked
 
 

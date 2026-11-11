@@ -145,7 +145,7 @@ def my_leave_page(request):
             "request": r,
             "can_cancel": r.status in LeaveRequest.ACTIVE_STATUSES and r.end_date >= today,
         }
-        for r in user.leave_requests.select_related("leave_type").order_by("-start_date", "-id")
+        for r in user.leave_requests.select_related("leave_type", "created_by").order_by("-start_date", "-id")
     ]
     return render(request, "leave/my_leave.html", {"rows": rows})
 

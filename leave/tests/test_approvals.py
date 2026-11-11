@@ -145,8 +145,10 @@ def test_an_unknown_decision_changes_nothing(client, manager, pending):
 def test_recently_decided_requests_are_listed_with_who_decided(client, manager, pending):
     client.force_login(manager)
     client.post(reverse("decide-request", args=[pending.pk]), {"decision": "approve", "comment": "OK"})
-    body = client.get(reverse("approvals")).content.decode()
-    assert "Recently decided" in body and "Mona Manager" in body and "Approved" in body
+    listing = client.get(reverse("approvals")).content.decode()
+    assert "Tech1 Tester" in listing and "badge approved" in listing  # now in the table, no longer a card
+    detail = client.get(reverse("request-detail", args=[pending.pk])).content.decode()
+    assert "Approved</strong> by Mona Manager" in detail
 
 
 # ---- the cover information the manager decides on --------------------------------- #

@@ -9,7 +9,7 @@
   {% for row in rows %}
     <tr>
       <td>{{ row.request.start_date|date:"D j M Y" }}{% if row.request.end_date != row.request.start_date %} to {{ row.request.end_date|date:"D j M Y" }}{% endif %}</td>
-      <td>{{ row.request.leave_type.name }}</td>
+      <td>{{ row.request.leave_type.name }}{% if row.request.created_by_id and row.request.created_by_id != row.request.user_id %}<br><span class="muted">Logged by {{ row.request.created_by.get_full_name|default:row.request.created_by.username }}</span>{% endif %}</td>
       <td>{{ row.request.working_days }}</td>
       <td><span class="status">{{ row.request.get_status_display }}</span>{% if row.request.decision_comment %}<br><span class="muted">{{ row.request.decision_comment }}</span>{% endif %}{% if row.request.cancel_reason %}<br><span class="muted">{{ row.request.cancel_reason }}</span>{% endif %}</td>
       <td>

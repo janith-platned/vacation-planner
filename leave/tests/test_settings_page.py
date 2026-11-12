@@ -146,7 +146,7 @@ def test_holiday_year_filter(client, manager, team):
 
 # ---- leave types ---------------------------------------------------------------------------- #
 def lt_data(team, **over):
-    data = {"team": team.pk, "name": "Jury duty", "counts_toward_floor": "1", "employee_bookable": "1"}
+    data = {"team": team.pk, "name": "Jury duty", "counts_toward_floor": "1", "employee_bookable": "1", "approval_threshold_override": "5"}
     data.update(over)
     return data
 
@@ -154,7 +154,7 @@ def lt_data(team, **over):
 def test_add_a_leave_type_with_its_own_threshold(client, manager, team, techs):
     client.force_login(manager)
     body = post(client, "save-leave-type", lt_data(team, approval_threshold_override="0", always_needs_approval="1"))
-    assert "Leave type saved" in body
+    assert "Leave type added to: Toronto" in body
     jury = LeaveType.objects.get(team=team, name="Jury duty")
     assert jury.approval_threshold_override == 0 and jury.always_needs_approval and jury.active
     booking = services.book_leave(user=techs[0], leave_type=jury, start_date=day(0), end_date=day(0), today=TODAY)
@@ -176,7 +176,7 @@ def test_edit_deactivate_and_flags(client, manager, team, techs, vacation):
 
 def test_leave_type_validation_and_scope(client, manager, other_manager, team, vacation):
     client.force_login(manager)
-    assert "already has a leave type" in post(client, "save-leave-type", lt_data(team, name="Vacation"))
+    assert "Already has a leave type named" in post(client, "save-leave-type", lt_data(team, name="Vacation"))
     assert "Give the leave type a name" in post(client, "save-leave-type", lt_data(team, name=" "))
     assert "between 0 and 365" in post(client, "save-leave-type", lt_data(team, approval_threshold_override="500"))
     client.force_login(other_manager)

@@ -12,6 +12,8 @@
   .item:first-child { border-top: 0; }
   .item.off { opacity: .65; }
   details summary { cursor: pointer; font-weight: 600; color: var(--accent); }
+  details.multi { margin: 8px 0; }
+  details.multi .checks { flex-direction: column; gap: 6px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; margin-top: 6px; }
   .badge { display: inline-block; padding: 1px 9px; border-radius: 999px; font-size: .8rem; font-weight: 600; border: 1px solid var(--border); background: var(--nofloor); }
 </style>
 {% endblock %}
@@ -61,7 +63,8 @@
   </div>
   {% if team.notify_manager_new_request %}<input type="hidden" name="notify_manager" value="1">{% endif %}
   {% if team.notify_employee_updates %}<input type="hidden" name="notify_employee" value="1">{% endif %}
-  <p class="muted">Changing working days, holidays or the time zone does not move leave that is already booked.</p>
+  <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="apply_to_leave_types" value="1"> Also set this approval limit on every leave type of this team</label>
+  <p class="muted">Each leave type has its own approval limit (set under Leave types). Changing working days, holidays or the time zone does not move leave that is already booked.</p>
   <button type="submit">Save rules</button>
 </form>
 
@@ -151,4 +154,11 @@
   <button type="submit">Save notifications</button>
 </form>
 {% endif %}
+<script>
+  document.querySelectorAll("details.multi").forEach(function (box) {
+    var count = box.querySelector("[data-count]");
+    function update() { count.textContent = box.querySelectorAll("input[type=checkbox]:checked").length; }
+    box.addEventListener("change", update); update();
+  });
+</script>
 {% endblock %}

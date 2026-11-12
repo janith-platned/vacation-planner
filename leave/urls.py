@@ -22,6 +22,7 @@ urlpatterns = [
     path("manage/settings/roles/add/", settings_pages.add_role_view, name="add-role"),
     path("manage/settings/roles/<int:pk>/", settings_pages.update_role_view, name="update-role"),
     path("manage/settings/leave-types/", settings_pages.save_leave_type_view, name="save-leave-type"),
+    path("manage/settings/leave-types/<int:pk>/delete/", settings_pages.delete_leave_type_view, name="delete-leave-type"),
     path("manage/settings/holidays/add/", settings_pages.add_holiday_view, name="add-holiday"),
     path("manage/settings/holidays/<int:pk>/delete/", settings_pages.delete_holiday_view, name="delete-holiday"),
     path("manage/team/", member_pages.members_page, name="members"),

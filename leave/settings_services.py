@@ -10,7 +10,7 @@ from django.db import IntegrityError, transaction
 from accounts.models import ResourceRole, Team, User
 
 from .exceptions import InvalidRequest
-from .models import Holiday, LeaveType
+from .models import Holiday, LeaveRequest, LeaveType
 from .services import _audit, _lock_role, _require_manager
 
 MAX_THRESHOLD = 365
@@ -26,6 +26,7 @@ def update_team_rules(
     manager_counts_toward_headcount: bool,
     notify_manager_new_request: bool = True,
     notify_employee_updates: bool = True,
+    apply_to_leave_types: bool = False,
 ) -> Team:
     """`approval_threshold`: None = nothing needs approval; 0 = everything does; N = more than N working days.
 
@@ -57,6 +58,8 @@ def update_team_rules(
             "approval_threshold", "working_days", "timezone", "manager_counts_toward_headcount",
             "notify_manager_new_request", "notify_employee_updates",
         ])
+        if apply_to_leave_types and approval_threshold is not None:
+            team.leave_types.update(approval_threshold_override=approval_threshold)
         _audit(actor=actor, action="team.settings", entity=team, before=before, after={
             "approval_threshold": team.approval_threshold,
             "working_days": team.working_days,
@@ -91,6 +94,73 @@ def delete_holiday(*, actor: User, holiday: Holiday) -> None:
 
 
 # ---- leave types --------------------------------------------------------------------------- #
+def _clean_threshold(value: Optional[int]) -> int:
+    if value is None:
+        raise InvalidRequest("Enter the number of working days above which approval is needed (0 = every request).")
+    if not 0 <= value <= MAX_THRESHOLD:
+        raise InvalidRequest(f"The approval threshold must be between 0 and {MAX_THRESHOLD} working days.")
+    return value
+
+
+def create_leave_type(
+    *,
+    actor: User,
+    teams: list[Team],
+    name: str,
+    counts_toward_floor: bool,
+    always_needs_approval: bool,
+    employee_bookable: bool,
+    approval_threshold_override: Optional[int],
+) -> list[LeaveType]:
+    """Create the same leave type in every selected team, all or nothing.
+
+    A team that already has a type with that name stops the whole request, and the message names the teams.
+    """
+    if not teams:
+        raise InvalidRequest("Choose at least one team.")
+    name = name.strip()
+    if not name:
+        raise InvalidRequest("Give the leave type a name.")
+    threshold = _clean_threshold(approval_threshold_override)
+    for team in teams:
+        _require_manager(actor, team)
+    clashes = [t.name for t in teams if LeaveType.objects.filter(team=t, name__iexact=name).exists()]
+    if clashes:
+        raise InvalidRequest(f"Already has a leave type named \"{name}\": {', '.join(clashes)}. Nothing was created.")
+    created = []
+    try:
+        with transaction.atomic():
+            for team in teams:
+                fields = {
+                    "name": name,
+                    "counts_toward_floor": counts_toward_floor,
+                    "always_needs_approval": always_needs_approval,
+                    "employee_bookable": employee_bookable,
+                    "approval_threshold_override": threshold,
+                    "active": True,
+                }
+                leave_type = LeaveType.objects.create(team=team, **fields)
+                _audit(actor=actor, action="leave_type.add", entity=leave_type, after=fields)
+                created.append(leave_type)
+    except IntegrityError as exc:
+        raise InvalidRequest("One of the teams already has a leave type with that name.") from exc
+    return created
+
+
+def delete_leave_type(*, actor: User, leave_type: LeaveType) -> None:
+    """Delete a leave type nobody has used. A used one keeps its history; switch it off instead."""
+    _require_manager(actor, leave_type.team)
+    with transaction.atomic():
+        used = LeaveRequest.objects.filter(leave_type=leave_type).count()
+        if used:
+            raise InvalidRequest(
+                f"This leave type is used by {used} request{'s' if used != 1 else ''}, so it cannot be deleted. "
+                "Switch it off instead and nobody can book it again."
+            )
+        _audit(actor=actor, action="leave_type.delete", entity=leave_type, before={"name": leave_type.name})
+        leave_type.delete()
+
+
 def save_leave_type(
     *,
     actor: User,
@@ -107,8 +177,7 @@ def save_leave_type(
     name = name.strip()
     if not name:
         raise InvalidRequest("Give the leave type a name.")
-    if approval_threshold_override is not None and not 0 <= approval_threshold_override <= MAX_THRESHOLD:
-        raise InvalidRequest(f"The approval threshold must be between 0 and {MAX_THRESHOLD} working days.")
+    approval_threshold_override = _clean_threshold(approval_threshold_override)
     if leave_type is not None and leave_type.team_id != team.id:
         raise InvalidRequest("That leave type belongs to another team.")
     fields = {

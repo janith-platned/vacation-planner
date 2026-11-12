@@ -7,6 +7,7 @@ from urllib.parse import urlencode
 from zoneinfo import available_timezones
 
 from django.contrib import messages
+from django.db.models import Count
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -62,7 +63,9 @@ def settings_page(request):
     year = request.GET.get("year", "")
     year = int(year) if year.isdigit() and 2000 <= int(year) <= 2100 else services.today_for(team).year
     role_page, role_query = paginate(request, team.resource_roles.order_by("-active", "name"), param="rpage", size=15)
-    type_page, type_query = paginate(request, team.leave_types.order_by("-active", "name"), param="lpage", size=15)
+    type_page, type_query = paginate(
+        request, team.leave_types.annotate(request_count=Count("requests")).order_by("-active", "name"), param="lpage", size=15
+    )
     holiday_page, holiday_query = paginate(request, team.holidays.filter(date__year=year), param="hpage", size=20)
     return render(
         request,
@@ -80,6 +83,7 @@ def settings_page(request):
             "holiday_page": holiday_page, "holiday_query": holiday_query,
             "year": year,
             "never_approve": team.approval_threshold is None,
+            "default_threshold": team.approval_threshold if team.approval_threshold is not None else svc.MAX_THRESHOLD,
         },
     )
 
@@ -103,6 +107,7 @@ def save_rules_view(request):
             manager_counts_toward_headcount=request.POST.get("manager_counts") == "1",
             notify_manager_new_request=request.POST.get("notify_manager") == "1",
             notify_employee_updates=request.POST.get("notify_employee") == "1",
+            apply_to_leave_types=request.POST.get("apply_to_leave_types") == "1",
         )
 
     return _run(request, team, action, "Team rules saved. Leave that is already booked is not changed.")
@@ -138,30 +143,50 @@ def update_role_view(request, pk: int):
 @login_required
 @require_POST
 def save_leave_type_view(request):
-    """Create (no `id`) or update a leave type."""
+    """Update a leave type (with `id`), or create one in every selected team (without)."""
     _require_manager_role(request.user)
-    _, team = _team(request, request.POST.get("team"))
+    managed, team = _team(request, request.POST.get("team"))
     if team is None:
         return redirect("settings")
-    raw_id = request.POST.get("id", "")
-    leave_type = get_object_or_404(LeaveType, pk=raw_id, team=team) if raw_id.isdigit() else None
     p = request.POST
-    return _run(
-        request,
-        team,
-        lambda: svc.save_leave_type(
-            actor=request.user,
-            team=team,
-            leave_type=leave_type,
-            name=p.get("name", ""),
+    raw_id = p.get("id", "")
+    if raw_id.isdigit():
+        leave_type = get_object_or_404(LeaveType, pk=raw_id, team=team)
+        return _run(
+            request,
+            team,
+            lambda: svc.save_leave_type(
+                actor=request.user, team=team, leave_type=leave_type, name=p.get("name", ""),
+                counts_toward_floor=p.get("counts_toward_floor") == "1",
+                always_needs_approval=p.get("always_needs_approval") == "1",
+                employee_bookable=p.get("employee_bookable") == "1",
+                approval_threshold_override=_int_or_none(p.get("approval_threshold_override", "")),
+                active=p.get("active") == "1",
+            ),
+            "Leave type saved.",
+        )
+    picked = [t for t in managed if str(t.pk) in p.getlist("teams")] or [team]
+
+    def create():
+        svc.create_leave_type(
+            actor=request.user, teams=picked, name=p.get("name", ""),
             counts_toward_floor=p.get("counts_toward_floor") == "1",
             always_needs_approval=p.get("always_needs_approval") == "1",
             employee_bookable=p.get("employee_bookable") == "1",
             approval_threshold_override=_int_or_none(p.get("approval_threshold_override", "")),
-            active=p.get("active") == "1" if leave_type else True,
-        ),
-        "Leave type saved.",
-    )
+        )
+
+    where = ", ".join(t.name for t in picked)
+    return _run(request, team, create, f"Leave type added to: {where}.")
+
+
+@login_required
+@require_POST
+def delete_leave_type_view(request, pk: int):
+    _require_manager_role(request.user)
+    leave_type = get_object_or_404(LeaveType.objects.select_related("team"), pk=pk, team__in=services.managed_teams(request.user))
+    name = leave_type.name
+    return _run(request, leave_type.team, lambda: svc.delete_leave_type(actor=request.user, leave_type=leave_type), f"Deleted the leave type \"{name}\".")
 
 
 @login_required

@@ -26,6 +26,8 @@ Accessibility: every screen has a skip link, one h1, labelled fields, marked cur
 
 Mobile: below 720px the navigation collapses into a Menu button; tables stack into labelled cards; the calendar shows compact cells (for example "1/3 off", "1 left") while screen readers still get the full wording. Every list that can grow is paged (my leave, team, breaches, console teams/managers/regions/departments, settings roles/leave types/holidays, a person's upcoming leave, floor overrides, waiting requests). Approved and rejected leave shows who decided and when ("Approved automatically" when it was within the approval limit).
 
+Leave types: a manager adds a new leave type to one or several of their teams at once (all or nothing, naming any team that already has that name), every type has an explicit approval limit (the box is prefilled with the team's limit; 0 = every request needs approval), a type nobody has ever used can be deleted, and a used one is switched off instead so history keeps its meaning. The team rules screen can optionally push its approval limit onto every leave type.
+
 Not built yet: Entra SSO, half-days, MFA, calendar sync. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.

@@ -71,7 +71,7 @@
       <input class="floor-input" type="number" min="0" max="999" id="floor_{{ b.role.pk }}" name="floor_{{ b.role.pk }}" value="{{ b.month_floor|default_if_none:'' }}" placeholder="none">
     </div>
     {% endfor %}
-    <button type="submit">Apply to whole month</button>
+    <button type="submit">Apply to Whole Month</button>
   </div>
   <p class="muted" style="margin-bottom:0">Leave a box empty to keep it as it is. Overrides for specific dates are kept.</p>
 </form>
@@ -107,16 +107,16 @@
 {% endfor %}
 <p class="muted"><span class="ovr">*</span> marks a day whose floor comes from a date override.</p>
 
-<h2>Date overrides</h2>
+<h2>Date Overrides</h2>
 <form method="post" action="{% url 'add-override' %}" class="card ovr-form">
   {% csrf_token %}
   <input type="hidden" name="team" value="{{ team.pk }}">
   <input type="hidden" name="month" value="{{ month_value }}">
   <div><label for="{{ override_form.role.id_for_label }}">Role</label>{{ override_form.role }}</div>
-  <div><label for="{{ override_form.start_date.id_for_label }}">First day</label>{{ override_form.start_date }}</div>
-  <div><label for="{{ override_form.end_date.id_for_label }}">Last day</label>{{ override_form.end_date }}</div>
+  <div><label for="{{ override_form.start_date.id_for_label }}">First Day</label>{{ override_form.start_date }}</div>
+  <div><label for="{{ override_form.end_date.id_for_label }}">Last Day</label>{{ override_form.end_date }}</div>
   <div><label for="{{ override_form.min_available.id_for_label }}">Floor</label><input class="floor-input" type="number" min="0" max="999" name="min_available" id="{{ override_form.min_available.id_for_label }}" required></div>
-  <button type="submit">Add override</button>
+  <button type="submit">Add Override</button>
 </form>
 
 {% if overrides %}

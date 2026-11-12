@@ -103,13 +103,13 @@
   <input type="hidden" name="start_date" id="range-start">
   <input type="hidden" name="end_date" id="range-end">
   <p id="range-summary" aria-live="polite"></p>
-  <label for="range-type">Leave type</label>
+  <label for="range-type">Leave Type</label>
   <select id="range-type" name="leave_type">
     {% for lt in leave_types %}<option value="{{ lt.pk }}">{{ lt.name }}</option>{% endfor %}
   </select>
   <p id="range-check" class="muted" aria-live="polite"></p>
   <p>
-    <button type="submit" id="range-submit">Book these days</button>
+    <button type="submit" id="range-submit">Book These Days</button>
     <button type="button" id="range-clear" class="secondary">Clear (Esc)</button>
     <a class="button secondary" href="{% url 'book-leave' %}">Use the date form instead</a>
   </p>
@@ -122,7 +122,7 @@
   <span>Floor: minimum people who must stay available.</span>
   <span>Slots left: how many more people can book that day.</span>
 </div>
-{% if not can_book %}<p style="margin-top:16px"><a class="button" href="{% url 'book-leave' %}">Book leave</a></p>{% endif %}
+{% if not can_book %}<p style="margin-top:16px"><a class="button" href="{% url 'book-leave' %}">Book Leave</a></p>{% endif %}
 {% else %}
 <p class="card">This team has no active resource roles.</p>
 {% endif %}

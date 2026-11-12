@@ -263,7 +263,7 @@ def test_detail_page_shows_upcoming_leave_and_actions(client, manager, techs, va
     book(techs[0], vacation, day(0))
     client.force_login(manager)
     body = client.get(reverse("member-detail", args=[techs[0].pk])).content.decode()
-    assert "Upcoming leave" in body and "Mon 7 Dec 2026" in body and "Deactivate" in body and "Reset password" in body
+    assert "Upcoming Leave" in body and "Mon 7 Dec 2026" in body and "Deactivate" in body and "Reset Password" in body
 
 
 def test_updating_through_the_screen(client, manager, roles, techs, vacation):

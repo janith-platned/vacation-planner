@@ -51,7 +51,7 @@ class Floor(models.Model):
 
     class Kind(models.TextChoices):
         MONTH = "month", "Month"
-        OVERRIDE = "override", "Date override"
+        OVERRIDE = "override", "Date Override"
 
     team = models.ForeignKey("accounts.Team", on_delete=models.CASCADE, related_name="floors")
     resource_role = models.ForeignKey("accounts.ResourceRole", on_delete=models.CASCADE, related_name="floors")
@@ -91,8 +91,8 @@ class LeaveRequest(models.Model):
         PENDING = "pending", "Pending"
         APPROVED = "approved", "Approved"
         REJECTED = "rejected", "Rejected"
-        CANCELLED_BY_EMPLOYEE = "cancelled_by_employee", "Cancelled by employee"
-        CANCELLED_BY_MANAGER = "cancelled_by_manager", "Cancelled by manager"
+        CANCELLED_BY_EMPLOYEE = "cancelled_by_employee", "Cancelled by Employee"
+        CANCELLED_BY_MANAGER = "cancelled_by_manager", "Cancelled by Manager"
 
     ACTIVE_STATUSES = (Status.PENDING, Status.APPROVED)
 

@@ -26,7 +26,7 @@ def set_floor(team, role, manager, value):
 
 
 def listing(client, **params):
-    return client.get(reverse("approvals"), params).content.decode().split("All requests")[1]
+    return client.get(reverse("approvals"), params).content.decode().split("All Requests")[1]
 
 
 # ---- the table ------------------------------------------------------------------- #
@@ -92,7 +92,7 @@ def test_detail_shows_days_and_history(client, manager, techs, vacation):
     body = client.get(reverse("request-detail", args=[request.pk])).content.decode()
     assert "Tech1 Tester" in body and "Agreed by phone" in body
     assert "Booked</strong> by Mona Manager on behalf of Tech1 Tester" in body
-    assert "Modify dates" in body and "Reject this leave" in body
+    assert "Modify Dates" in body and "Reject This Leave" in body
 
 
 def test_detail_of_another_managers_request_is_404(client, other_manager, techs, vacation):

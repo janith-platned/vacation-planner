@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Leave request · Vacation Planner{% endblock %}
+{% block title %}Leave Request · Vacation Planner{% endblock %}
 {% block head %}
 <style>
   .detail dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; margin: 0; }
@@ -21,7 +21,7 @@
 </style>
 {% endblock %}
 {% block content %}
-<p><a href="{% url 'approvals' %}">&larr; Back to approvals</a></p>
+<p><a href="{% url 'approvals' %}">&larr; Back to Approvals</a></p>
 <h1>{{ r.user.get_full_name|default:r.user.username }} <span class="badge {{ r.status }}">{{ r.get_status_display }}</span></h1>
 
 <section class="card detail" aria-label="Request details">
@@ -60,28 +60,28 @@
 
   {% if can_change %}
   <details class="action">
-    <summary>Modify dates</summary>
+    <summary>Modify Dates</summary>
     <form method="post" action="{% url 'modify-request' r.pk %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
-      <div><label for="start">First day</label><input type="date" id="start" name="start_date" value="{{ r.start_date|date:'Y-m-d' }}" required></div>
-      <div><label for="end">Last day</label><input type="date" id="end" name="end_date" value="{{ r.end_date|date:'Y-m-d' }}" required></div>
-      <div class="grow"><label for="note">Note to the employee (optional)</label><input type="text" id="note" name="comment" maxlength="500"></div>
+      <div><label for="start">First Day</label><input type="date" id="start" name="start_date" value="{{ r.start_date|date:'Y-m-d' }}" required></div>
+      <div><label for="end">Last Day</label><input type="date" id="end" name="end_date" value="{{ r.end_date|date:'Y-m-d' }}" required></div>
+      <div class="grow"><label for="note">Note to the Employee (optional)</label><input type="text" id="note" name="comment" maxlength="500"></div>
       <div class="grow">
         <label for="ovr"><input type="checkbox" id="ovr" name="override_floor" value="1"> Override the floor if the new dates breach it</label>
         <input type="text" name="override_reason" maxlength="500" placeholder="Reason for the override (required if ticked)" aria-label="Reason for the override">
       </div>
-      <button type="submit">Save changes</button>
+      <button type="submit">Save Changes</button>
     </form>
   </details>
 
   <details class="action">
-    <summary>Reject this leave</summary>
+    <summary>Reject This Leave</summary>
     <form method="post" action="{% url 'reject-approved' r.pk %}">
       {% csrf_token %}
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <div class="grow"><label for="why">Reason (required, shown to the employee)</label><input type="text" id="why" name="reason" maxlength="500" required></div>
-      <button type="submit" class="secondary">Reject and release the days</button>
+      <button type="submit" class="secondary">Reject and Release the Days</button>
     </form>
   </details>
   {% endif %}

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}My leave · Vacation Planner{% endblock %}
+{% block title %}My Leave · Vacation Planner{% endblock %}
 {% block content %}
-<h1>My leave</h1>
+<h1>My Leave</h1>
 {% if rows %}
 <table class="list">
-  <thead><tr><th scope="col">Dates</th><th scope="col">Type</th><th scope="col">Working days</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
+  <thead><tr><th scope="col">Dates</th><th scope="col">Type</th><th scope="col">Working Days</th><th scope="col">Status</th><th scope="col"><span class="sr-only">Actions</span></th></tr></thead>
   <tbody>
   {% for row in rows %}
     <tr>
@@ -25,6 +25,6 @@
 </table>
 {% include "leave/_pager.html" with page_obj=page_obj base_query=base_query param="page" %}
 {% else %}
-<p class="card">You have no leave yet. <a href="{% url 'book-leave' %}">Book leave</a></p>
+<p class="card">You have no leave yet. <a href="{% url 'book-leave' %}">Book Leave</a></p>
 {% endif %}
 {% endblock %}

@@ -37,11 +37,11 @@
 {% block content %}
 <div class="page-head">
   <h1>Approvals</h1>
-  <a class="button" href="{% url 'log-leave' %}">Log leave for an employee</a>
+  <a class="button" href="{% url 'log-leave' %}">Log Leave for an Employee</a>
 </div>
 
 {% if email_changes %}
-  <h2 style="font-size:1.15rem">Email changes waiting for you</h2>
+  <h2 style="font-size:1.15rem">Email Changes Waiting for You</h2>
   {% for c in email_changes %}
   <section class="card request" aria-labelledby="ec-{{ c.pk }}">
     <h2 id="ec-{{ c.pk }}">{{ c.user.get_full_name|default:c.user.username }} wants to change their email</h2>
@@ -94,10 +94,10 @@
   <p class="card">Nothing is waiting for approval.</p>
 {% endif %}
 
-<h2>All requests</h2>
+<h2>All Requests</h2>
 <form method="get" class="filters" role="search" aria-label="Filter requests">
   <div>
-    <label for="q">Search by name</label>
+    <label for="q">Search by Name</label>
     <input type="search" id="q" name="q" value="{{ q }}" placeholder="e.g. Tom">
   </div>
   {% if teams|length > 1 %}

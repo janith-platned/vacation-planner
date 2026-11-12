@@ -4,7 +4,7 @@
   {% if lt %}<input type="hidden" name="id" value="{{ lt.pk }}">{% endif %}
   <div class="row-form">
     <div><label for="lt-name-{{ lt.pk|default:'new' }}">Name</label><input type="text" id="lt-name-{{ lt.pk|default:'new' }}" name="name" value="{{ lt.name|default:'' }}" maxlength="100" required></div>
-    <div><label for="lt-thr-{{ lt.pk|default:'new' }}">Approval above (working days)</label><input class="num" type="number" min="0" max="365" id="lt-thr-{{ lt.pk|default:'new' }}" name="approval_threshold_override" value="{% if lt and lt.approval_threshold_override is not None %}{{ lt.approval_threshold_override }}{% else %}{{ default_threshold }}{% endif %}" required aria-describedby="lt-thr-help-{{ lt.pk|default:'new' }}"></div>
+    <div><label for="lt-thr-{{ lt.pk|default:'new' }}">Approval Above (working days)</label><input class="num" type="number" min="0" max="365" id="lt-thr-{{ lt.pk|default:'new' }}" name="approval_threshold_override" value="{% if lt and lt.approval_threshold_override is not None %}{{ lt.approval_threshold_override }}{% else %}{{ default_threshold }}{% endif %}" required aria-describedby="lt-thr-help-{{ lt.pk|default:'new' }}"></div>
   </div>
   <p class="muted" id="lt-thr-help-{{ lt.pk|default:'new' }}" style="margin-top:0">0 means every request of this type needs approval.{% if never_approve %} This team's own setting is "never needs approval", so 365 is used as "effectively never".{% endif %}</p>
   {% if not lt and teams|length > 1 %}
@@ -26,7 +26,7 @@
 {% if lt %}
   {% if lt.request_count == 0 %}
   <form method="post" action="{% url 'delete-leave-type' lt.pk %}" style="margin-top:8px" onsubmit="return confirm('Delete the leave type {{ lt.name|escapejs }}? This cannot be undone.');">
-    {% csrf_token %}<button type="submit" class="link">Delete this leave type</button>
+    {% csrf_token %}<button type="submit" class="link">Delete This Leave Type</button>
   </form>
   {% else %}
   <p class="muted" style="margin:8px 0 0">Used by {{ lt.request_count }} request{{ lt.request_count|pluralize }}, so it cannot be deleted. Untick Active to stop it being booked.</p>

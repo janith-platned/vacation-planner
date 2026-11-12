@@ -52,7 +52,7 @@ def test_approved_leave_is_in_the_table_and_the_detail_page_has_both_actions(cli
     detail_url = reverse("request-detail", args=[approved.pk])
     assert detail_url in body
     detail = client.get(detail_url).content.decode()
-    assert "Modify dates" in detail and "Reject this leave" in detail
+    assert "Modify Dates" in detail and "Reject This Leave" in detail
     assert modify_url(approved) in detail and reject_url(approved) in detail
 
 
@@ -65,7 +65,7 @@ def test_leave_that_has_ended_is_not_in_the_default_view(client, manager, techs,
     past_view = client.get(reverse("approvals"), {"when": "past"}).content.decode()
     assert "Tech2 Tester" in past_view
     detail = client.get(reverse("request-detail", args=[past.pk])).content.decode()
-    assert "Modify dates" not in detail  # over: history only
+    assert "Modify Dates" not in detail  # over: history only
 
 
 def test_pending_requests_are_not_in_the_default_approved_table(client, manager, team, techs, vacation):
@@ -75,7 +75,7 @@ def test_pending_requests_are_not_in_the_default_approved_table(client, manager,
     client.force_login(manager)
     body = client.get(reverse("approvals")).content.decode()
     assert "No requests match" in body and "Cover holds" in body  # shown as a card, not in the table
-    assert "Tech1 Tester" in client.get(reverse("approvals"), {"status": "pending"}).content.decode().split("All requests")[1]
+    assert "Tech1 Tester" in client.get(reverse("approvals"), {"status": "pending"}).content.decode().split("All Requests")[1]
 
 
 # ---- access ---------------------------------------------------------------------- #

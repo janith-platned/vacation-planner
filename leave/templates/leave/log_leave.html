@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Log leave for an employee · Vacation Planner{% endblock %}
+{% block title %}Log Leave for an Employee · Vacation Planner{% endblock %}
 {% block head %}
 <style>
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
@@ -10,8 +10,8 @@
 </style>
 {% endblock %}
 {% block content %}
-<p><a href="{% url 'approvals' %}">&larr; Back to approvals</a></p>
-<h1>Log leave for an employee</h1>
+<p><a href="{% url 'approvals' %}">&larr; Back to Approvals</a></p>
+<h1>Log Leave for an Employee</h1>
 
 {% if not has_employees %}
 <p class="card">There are no active employees with a role in the teams you manage.</p>
@@ -34,19 +34,19 @@
       {{ form.employee }}{{ form.employee.errors }}
     </div>
     <div>
-      <label for="{{ form.leave_type.id_for_label }}">Leave type</label>
+      <label for="{{ form.leave_type.id_for_label }}">Leave Type</label>
       {{ form.leave_type }}{{ form.leave_type.errors }}
     </div>
     <div>
-      <label for="{{ form.start_date.id_for_label }}">First day</label>
+      <label for="{{ form.start_date.id_for_label }}">First Day</label>
       {{ form.start_date }}{{ form.start_date.errors }}
     </div>
     <div>
-      <label for="{{ form.end_date.id_for_label }}">Last day</label>
+      <label for="{{ form.end_date.id_for_label }}">Last Day</label>
       {{ form.end_date }}{{ form.end_date.errors }}
     </div>
     <div class="wide">
-      <label for="{{ form.comment.id_for_label }}">Note to the employee (optional)</label>
+      <label for="{{ form.comment.id_for_label }}">Note to the Employee (optional)</label>
       {{ form.comment }}{{ form.comment.errors }}
     </div>
     <div class="wide">
@@ -56,7 +56,7 @@
     </div>
   </div>
   <div id="check" role="status" aria-live="polite"></div>
-  <button type="submit">Log approved leave</button>
+  <button type="submit">Log Approved Leave</button>
 </form>
 
 {{ employee_team|json_script:"employee-team" }}

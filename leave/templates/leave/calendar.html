@@ -29,7 +29,18 @@
   .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: .85rem; color: var(--muted); margin-top: 12px; }
   .range-panel { position: sticky; bottom: 8px; box-shadow: 0 4px 16px rgba(0, 0, 0, .18); }
   .range-panel[hidden] { display: none; }
-  @media (max-width: 640px) { .cal td { height: 76px; font-size: .7rem; padding: 3px; } }
+    .cal .short { display: none; }
+  @media (max-width: 640px) {
+    .cal { border-spacing: 2px; }
+    .cal th { font-size: .7rem; padding: 2px 0; text-align: center; }
+    .cal td { height: 64px; font-size: .7rem; padding: 3px 2px; text-align: center; line-height: 1.25; overflow: hidden; }
+    .cal td .num { font-size: .85rem; }
+    .cal .long { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .cal .short { display: block; }
+    .cal .badge { margin-top: 2px; padding: 0 4px; font-size: .65rem; }
+    .cal td.sel::after, .cal td.skip::after { font-size: .6rem; right: 2px; bottom: 1px; }
+    .toolbar { gap: 8px; }
+  }
 </style>
 {% endblock %}
 {% block content %}
@@ -73,11 +84,11 @@
         <div class="num">{{ cell.date.day }}</div>
         {% if cell.in_month %}
           {% if cell.counts %}
-            <div>{{ cell.counts.on_leave }} of {{ cell.counts.headcount }} off</div>
+            <div><span class="long">{{ cell.counts.on_leave }} of {{ cell.counts.headcount }} off</span><span class="short" aria-hidden="true">{{ cell.counts.on_leave }}/{{ cell.counts.headcount }} off</span></div>
             {% if cell.counts.floor is not None %}<div>Floor {{ cell.counts.floor }}</div>{% endif %}
           {% endif %}
-          <div><strong>{{ cell.label }}</strong></div>
-          {% if cell.mine %}<span class="badge">You're off</span>{% endif %}
+          <div><strong><span class="long">{{ cell.label }}</span><span class="short" aria-hidden="true">{{ cell.short_label }}</span></strong></div>
+          {% if cell.mine %}<span class="badge"><span class="long">You're off</span><span class="short" aria-hidden="true">You</span></span>{% endif %}
         {% endif %}
       </td>
     {% endfor %}

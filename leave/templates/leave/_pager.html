@@ -1,0 +1,9 @@
+{% if page_obj.paginator.num_pages > 1 %}
+<nav class="pager" aria-label="{{ label|default:'Pages' }}">
+  <span class="muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+  <span class="links">
+    {% if page_obj.has_previous %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}{{ param|default:'page' }}={{ page_obj.previous_page_number }}">Previous<span class="sr-only"> page</span></a>{% endif %}
+    {% if page_obj.has_next %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}{{ param|default:'page' }}={{ page_obj.next_page_number }}">Next<span class="sr-only"> page</span></a>{% endif %}
+  </span>
+</nav>
+{% endif %}

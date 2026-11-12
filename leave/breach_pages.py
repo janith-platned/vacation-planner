@@ -13,6 +13,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from . import services
+from .pagination import paginate
 from .exceptions import LeaveError
 from .manage_pages import _back, _dates, _managed_request, _person, _require_manager_role
 from .models import LeaveDay
@@ -70,6 +71,7 @@ def breaches_page(request):
     days = _window(request.GET.get("days", ""))
     role = request.GET.get("role", "")
     rows = build_breach_days(request.user, scope, days, role)
+    page_obj, base_query = paginate(request, rows, size=20)
     role_names = sorted({r.name for t in scope for r in t.resource_roles.filter(active=True)})
     return render(
         request,
@@ -81,7 +83,10 @@ def breaches_page(request):
             "windows": WINDOWS,
             "role": role,
             "roles": role_names,
-            "rows": rows,
+            "rows": page_obj.object_list,
+            "total": len(rows),
+            "page_obj": page_obj,
+            "base_query": base_query,
             "multi_team": len(scope) > 1,
         },
     )

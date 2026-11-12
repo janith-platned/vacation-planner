@@ -21,6 +21,7 @@ from django.views.decorators.http import require_GET, require_POST
 from accounts.models import ResourceRole, SystemRole, User
 
 from . import services
+from .pagination import paginate
 from .exceptions import FloorViolationError, LeaveError
 from .forms import LogLeaveForm, ManagerModifyForm
 from .models import AuditLog, LeaveRequest, LeaveType
@@ -115,11 +116,14 @@ def approvals_page(request):
     when = request.GET.get("when", "upcoming")
     when = when if when in dict(WHEN_LABELS) else "upcoming"
 
-    base = LeaveRequest.objects.select_related("user", "team", "team__region", "leave_type", "user__resource_role")
+    base = LeaveRequest.objects.select_related("user", "team", "team__region", "leave_type", "user__resource_role", "decided_by")
 
     # Requests waiting for a decision: few, and each needs the manager's attention.
     pending = []
-    for leave_request in base.filter(team__in=scope, status=Status.PENDING).order_by("start_date", "id"):
+    pending_page, pending_query = paginate(
+        request, base.filter(team__in=scope, status=Status.PENDING).order_by("start_date", "id"), param="ppage", size=10
+    )
+    for leave_request in pending_page.object_list:
         first_day = leave_request.days.select_related("resource_role").first()
         pending.append(
             {
@@ -166,6 +170,9 @@ def approvals_page(request):
             "when": when,
             "when_labels": WHEN_LABELS,
             "pending": pending,
+            "pending_total": pending_page.paginator.count,
+            "pending_page": pending_page,
+            "pending_query": pending_query,
             "page_obj": page_obj,
             "base_query": urlencode({k: v for k, v in filters.items() if v}),
             "filtered": bool(q or role or selected or status != "approved" or when != "upcoming"),

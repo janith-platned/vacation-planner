@@ -18,6 +18,15 @@ class Cell:
     level: str  # off, nofloor, ok, low, full (also shown as words, never colour alone)
     label: str
 
+    @property
+    def short_label(self) -> str:
+        """Compact wording for narrow screens; the full label is still read by screen readers."""
+        if self.label == "Non-working":
+            return "Off"
+        if self.label == "No floor set":
+            return "No floor"
+        return self.label.replace(" slots left", " left").replace(" slot left", " left")
+
 
 def level_and_label(counts: Optional[DayCount]) -> tuple[str, str]:
     if counts is None:

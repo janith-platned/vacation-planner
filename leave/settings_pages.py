@@ -15,6 +15,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import ResourceRole
 
 from . import services, settings_services as svc
+from .pagination import paginate
 from .exceptions import LeaveError
 from .manage_pages import _day, _require_manager_role
 from .models import Holiday, LeaveType
@@ -60,6 +61,9 @@ def settings_page(request):
         return render(request, "leave/settings.html", {"team": None})
     year = request.GET.get("year", "")
     year = int(year) if year.isdigit() and 2000 <= int(year) <= 2100 else services.today_for(team).year
+    role_page, role_query = paginate(request, team.resource_roles.order_by("-active", "name"), param="rpage", size=15)
+    type_page, type_query = paginate(request, team.leave_types.order_by("-active", "name"), param="lpage", size=15)
+    holiday_page, holiday_query = paginate(request, team.holidays.filter(date__year=year), param="hpage", size=20)
     return render(
         request,
         "leave/settings.html",
@@ -68,9 +72,12 @@ def settings_page(request):
             "teams": teams,
             "weekdays": [(i, calendar.day_name[i]) for i in range(7)],
             "timezones": _TIMEZONES if team.timezone in _TIMEZONES else [team.timezone, *_TIMEZONES],
-            "roles": team.resource_roles.order_by("-active", "name"),
-            "leave_types": team.leave_types.order_by("-active", "name"),
-            "holidays": team.holidays.filter(date__year=year),
+            "roles": role_page.object_list,
+            "leave_types": type_page.object_list,
+            "holidays": holiday_page.object_list,
+            "role_page": role_page, "role_query": role_query,
+            "type_page": type_page, "type_query": type_query,
+            "holiday_page": holiday_page, "holiday_query": holiday_query,
             "year": year,
             "never_approve": team.approval_threshold is None,
         },

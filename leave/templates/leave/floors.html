@@ -125,9 +125,9 @@
   <tbody>
   {% for o in overrides %}
     <tr>
-      <td>{{ o.resource_role.name }}</td>
-      <td>{{ o.start_date|date:"D j M Y" }}{% if o.end_date != o.start_date %} to {{ o.end_date|date:"D j M Y" }}{% endif %}</td>
-      <td>{{ o.min_available }}</td>
+      <td data-label="Role">{{ o.resource_role.name }}</td>
+      <td data-label="Dates">{{ o.start_date|date:"D j M Y" }}{% if o.end_date != o.start_date %} to {{ o.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td data-label="Floor">{{ o.min_available }}</td>
       <td>
         <form method="post" action="{% url 'delete-override' o.pk %}" onsubmit="return confirm('Remove this override?');">
           {% csrf_token %}<button class="link" type="submit">Remove<span class="sr-only"> {{ o.resource_role.name }} override from {{ o.start_date|date:"j M Y" }}</span></button>
@@ -137,6 +137,7 @@
   {% endfor %}
   </tbody>
 </table>
+{% include "leave/_pager.html" with page_obj=override_page base_query=override_query param="opage" label="Overrides pages" %}
 <p class="muted">When overrides overlap, the newest one wins.</p>
 {% else %}
 <p class="muted">No date overrides in {{ first|date:"F Y" }}.</p>

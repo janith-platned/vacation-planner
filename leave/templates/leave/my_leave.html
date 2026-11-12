@@ -8,11 +8,11 @@
   <tbody>
   {% for row in rows %}
     <tr>
-      <td>{{ row.request.start_date|date:"D j M Y" }}{% if row.request.end_date != row.request.start_date %} to {{ row.request.end_date|date:"D j M Y" }}{% endif %}</td>
-      <td>{{ row.request.leave_type.name }}{% if row.request.created_by_id and row.request.created_by_id != row.request.user_id %}<br><span class="muted">Logged by {{ row.request.created_by.get_full_name|default:row.request.created_by.username }}</span>{% endif %}</td>
-      <td>{{ row.request.working_days }}</td>
-      <td><span class="status">{{ row.request.get_status_display }}</span>{% if row.request.decision_comment %}<br><span class="muted">{{ row.request.decision_comment }}</span>{% endif %}{% if row.request.cancel_reason %}<br><span class="muted">{{ row.request.cancel_reason }}</span>{% endif %}</td>
-      <td>
+      <td data-label="Dates">{{ row.request.start_date|date:"D j M Y" }}{% if row.request.end_date != row.request.start_date %} to {{ row.request.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td data-label="Type">{{ row.request.leave_type.name }}{% if row.request.created_by_id and row.request.created_by_id != row.request.user_id %}<br><span class="muted">Logged by {{ row.request.created_by.get_full_name|default:row.request.created_by.username }}</span>{% endif %}</td>
+      <td data-label="Working days">{{ row.request.working_days }}</td>
+      <td data-label="Status"><span class="status">{{ row.request.get_status_display }}</span>{% with r=row.request %}<br>{% include "leave/_approval_info.html" %}{% endwith %}{% if row.request.decision_comment %}<br><span class="muted">{{ row.request.decision_comment }}</span>{% endif %}{% if row.request.cancel_reason %}<br><span class="muted">{{ row.request.cancel_reason }}</span>{% endif %}</td>
+      <td class="act">
         {% if row.can_cancel %}
         <form method="post" action="{% url 'cancel-leave' row.request.pk %}" onsubmit="return confirm('Cancel this leave?');">
           {% csrf_token %}<button class="link" type="submit">Cancel<span class="sr-only"> leave from {{ row.request.start_date|date:"j M Y" }}</span></button>
@@ -23,6 +23,7 @@
   {% endfor %}
   </tbody>
 </table>
+{% include "leave/_pager.html" with page_obj=page_obj base_query=base_query param="page" %}
 {% else %}
 <p class="card">You have no leave yet. <a href="{% url 'book-leave' %}">Book leave</a></p>
 {% endif %}

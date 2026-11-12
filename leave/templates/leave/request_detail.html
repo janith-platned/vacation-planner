@@ -31,6 +31,7 @@
     <dt>Dates</dt><dd>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</dd>
     <dt>Working days</dt><dd>{{ r.working_days }}{% if days %} ({% for d in days %}{{ d|date:"j M" }}{% if not forloop.last %}, {% endif %}{% endfor %}){% endif %}</dd>
     <dt>Leave type</dt><dd>{{ r.leave_type.name }}</dd>
+    {% if r.status == 'approved' or r.status == 'rejected' %}<dt>{% if r.status == 'approved' %}Approved{% else %}Rejected{% endif %}</dt><dd>{% if r.decided_by %}by {{ r.decided_by.get_full_name|default:r.decided_by.username }}{% if r.decided_at %} on {{ r.decided_at|date:"j M Y, H:i" }}{% endif %}{% else %}automatically (within the approval limit){% endif %}</dd>{% endif %}
     {% if r.floor_overridden %}<dt>Floor</dt><dd><strong>Floor override</strong></dd>{% endif %}
     {% if r.decision_comment %}<dt>Note</dt><dd>{{ r.decision_comment }}</dd>{% endif %}
   </dl>

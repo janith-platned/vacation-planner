@@ -24,6 +24,8 @@ The Audit screen shows who did what and when (leave, floors, people, settings, a
 
 Accessibility: every screen has a skip link, one h1, labelled fields, marked current page, and status shown in words as well as colour. The colour palette is checked against WCAG AA contrast (4.5:1) in both light and dark themes by the test suite, and `scripts/a11y/` renders every screen from the demo data and scans it with axe-core (no violations at the last scan). Automated checks cannot replace a real keyboard and screen-reader pass; do one before go-live.
 
+Mobile: below 720px the navigation collapses into a Menu button; tables stack into labelled cards; the calendar shows compact cells (for example "1/3 off", "1 left") while screen readers still get the full wording. Every list that can grow is paged (my leave, team, breaches, console teams/managers/regions/departments, settings roles/leave types/holidays, a person's upcoming leave, floor overrides, waiting requests). Approved and rejected leave shows who decided and when ("Approved automatically" when it was within the approval limit).
+
 Not built yet: Entra SSO, half-days, MFA, calendar sync. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.

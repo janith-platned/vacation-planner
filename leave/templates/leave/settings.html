@@ -75,6 +75,7 @@
     <button type="submit" class="secondary">Save</button>
   </form>
   {% endfor %}
+{% include "leave/_pager.html" with page_obj=role_page base_query=role_query param="rpage" label="Roles pages" %}
   <form method="post" action="{% url 'add-role' %}" class="row-form item">
     {% csrf_token %}<input type="hidden" name="team" value="{{ team.pk }}">
     <div><label for="new-role">New role</label><input type="text" id="new-role" name="name" maxlength="100" required placeholder="e.g. Support"></div>
@@ -96,6 +97,7 @@
     {% include "leave/_leave_type_form.html" with lt=lt %}
   </details>
   {% endfor %}
+{% include "leave/_pager.html" with page_obj=type_page base_query=type_query param="lpage" label="Leave types pages" %}
   <details class="item">
     <summary>Add a leave type</summary>
     {% include "leave/_leave_type_form.html" with lt=None %}
@@ -120,12 +122,13 @@
   <tbody>
   {% for h in holidays %}
     <tr>
-      <td>{{ h.date|date:"D j M Y" }}</td><td>{{ h.name }}</td>
+      <td data-label="Date">{{ h.date|date:"D j M Y" }}</td><td data-label="Holiday">{{ h.name }}</td>
       <td><form method="post" action="{% url 'delete-holiday' h.pk %}" onsubmit="return confirm('Remove this holiday?');">{% csrf_token %}<button class="link" type="submit">Remove<span class="sr-only"> {{ h.name }}</span></button></form></td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
+{% include "leave/_pager.html" with page_obj=holiday_page base_query=holiday_query param="hpage" label="Holidays pages" %}
 {% else %}
 <p class="muted">No holidays set for {{ year }}.</p>
 {% endif %}

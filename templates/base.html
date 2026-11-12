@@ -47,6 +47,29 @@
     table.list th, table.list td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
     .status { font-weight: 600; }
     .warn { border-left: 4px solid var(--full-b); padding-left: 12px; }
+    .nav-toggle { display: none; background: transparent; color: var(--text); border: 1px solid var(--border); padding: 6px 10px; margin-left: auto; line-height: 1; }
+    .nav-toggle .bars, .nav-toggle .bars::before, .nav-toggle .bars::after { display: block; width: 20px; height: 2px; background: currentColor; content: ""; position: relative; }
+    .nav-toggle .bars::before { position: absolute; top: -6px; } .nav-toggle .bars::after { position: absolute; top: 6px; }
+    .pager { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin: 12px 0; }
+    .pager .links { display: flex; gap: 8px; }
+    @media (max-width: 720px) {
+      html.js .nav-toggle { display: inline-block; }
+      html.js header.top nav { display: none; flex-direction: column; align-items: flex-start; width: 100%; margin-left: 0; gap: 10px; padding-top: 8px; border-top: 1px solid var(--border); }
+      html.js header.top nav.open { display: flex; }
+      header.top nav a { padding: 4px 0; }
+      main { padding: 12px; }
+    }
+    @media (max-width: 640px) {
+      table.list thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+      table.list tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: var(--surface); }
+      table.list td { border: 0; padding: 3px 0; text-align: left !important; }
+      table.list td[data-label]::before { content: attr(data-label) ": "; color: var(--muted); font-size: .85rem; }
+      .add-form > div, .row-form > div, .filters > div, .toolbar > div { flex: 1 1 100%; min-width: 0; }
+      .add-form input:not([type=checkbox]):not([type=radio]), .row-form input:not([type=checkbox]):not([type=radio]),
+      .filters input:not([type=checkbox]):not([type=radio]), .add-form select, .row-form select, .filters select { width: 100%; }
+      .add-form button, .filters button, .row-form button { width: 100%; }
+    }
     .skip { position: absolute; left: -999px; top: 0; background: var(--accent); color: var(--accent-text); padding: 8px 14px; z-index: 10; }
     .skip:focus { left: 8px; top: 8px; }
     nav a[aria-current="page"] { font-weight: 700; text-decoration: none; color: var(--text); }
@@ -60,7 +83,8 @@
   <header class="top">
     <a class="brand" href="{% url 'calendar' %}">Vacation Planner</a>
     {% if user.is_authenticated %}
-    <nav aria-label="Main">
+    <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav"><span class="bars" aria-hidden="true"></span><span class="sr-only">Menu</span></button>
+    <nav id="main-nav" aria-label="Main">
       <a href="{% url 'calendar' %}"{% if request.resolver_match.url_name == 'calendar' %} aria-current="page"{% endif %}>Calendar</a>
       <a href="{% url 'book-leave' %}"{% if request.resolver_match.url_name == 'book-leave' %} aria-current="page"{% endif %}>Book leave</a>
       <a href="{% url 'my-leave' %}"{% if request.resolver_match.url_name == 'my-leave' %} aria-current="page"{% endif %}>My leave</a>
@@ -90,5 +114,15 @@
     {% if messages %}<ul class="messages" role="status">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
     {% block content %}{% endblock %}
   </main>
+  <script>
+    (function () {
+      document.documentElement.classList.add("js");
+      var button = document.querySelector(".nav-toggle"), nav = document.getElementById("main-nav");
+      if (!button || !nav) return;
+      function set(open) { nav.classList.toggle("open", open); button.setAttribute("aria-expanded", open ? "true" : "false"); }
+      button.addEventListener("click", function () { set(!nav.classList.contains("open")); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape" && nav.classList.contains("open")) { set(false); button.focus(); } });
+    })();
+  </script>
 </body>
 </html>

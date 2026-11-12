@@ -100,6 +100,12 @@
   <div class="item">
     <span><strong>{{ m.get_full_name|default:m.username }}</strong> <span class="muted">{{ m.username }} · {{ m.team_count }} team{{ m.team_count|pluralize }}</span></span>
     <form method="post" action="{% url 'view-as-start' m.pk %}" class="inline">{% csrf_token %}<button class="link" type="submit">View as manager<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></button></form>
+    <form method="post" action="{% url 'console-reports-to' m.pk %}" class="row-form" style="margin-top:6px">
+      {% csrf_token %}
+      <div><label for="rt-{{ m.pk }}">Reports to</label>
+        <select id="rt-{{ m.pk }}" name="reports_to"><option value="">Nobody</option>{% for b in admins_and_managers %}{% if b.pk != m.pk %}<option value="{{ b.pk }}"{% if b.pk == m.reports_to_id %} selected{% endif %}>{{ b.get_full_name|default:b.username }}</option>{% endif %}{% endfor %}</select></div>
+      <button type="submit" class="secondary">Save<span class="sr-only"> reporting line for {{ m.get_full_name|default:m.username }}</span></button>
+    </form>
   </div>
   {% empty %}<p class="muted" style="margin:0">No managers yet.</p>{% endfor %}
 {% include "leave/_pager.html" with page_obj=manager_page base_query=manager_query param="mpage" label="Managers pages" %}
@@ -111,6 +117,7 @@
       <div><label for="m-last">Last name</label><input type="text" id="m-last" name="last_name"></div>
       <div><label for="m-user">Username</label><input type="text" id="m-user" name="username" required></div>
       <div><label for="m-email">Email (optional)</label><input type="email" id="m-email" name="email"></div>
+      <div><label for="m-boss">Reports to</label><select id="m-boss" name="reports_to"><option value="">Nobody</option>{% for b in admins_and_managers %}<option value="{{ b.pk }}">{{ b.get_full_name|default:b.username }}</option>{% endfor %}</select></div>
       <button type="submit">Add manager</button>
     </form>
   </details>

@@ -101,6 +101,15 @@ def _violation_text(violations) -> str:
 # --------------------------------------------------------------------------- #
 # Approvals and the requests table
 # --------------------------------------------------------------------------- #
+def _pending_email_changes(user):
+    from accounts.models import EmailChangeRequest
+
+    qs = EmailChangeRequest.objects.filter(status=EmailChangeRequest.Status.PENDING).select_related("user")
+    if user.system_role != SystemRole.ADMIN:
+        qs = qs.filter(approver=user)
+    return list(qs.order_by("created_at"))
+
+
 @login_required
 def approvals_page(request):
     user = request.user
@@ -170,6 +179,7 @@ def approvals_page(request):
             "when": when,
             "when_labels": WHEN_LABELS,
             "pending": pending,
+            "email_changes": _pending_email_changes(user),
             "pending_total": pending_page.paginator.count,
             "pending_page": pending_page,
             "pending_query": pending_query,

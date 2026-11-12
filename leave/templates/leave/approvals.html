@@ -40,6 +40,22 @@
   <a class="button" href="{% url 'log-leave' %}">Log leave for an employee</a>
 </div>
 
+{% if email_changes %}
+  <h2 style="font-size:1.15rem">Email changes waiting for you</h2>
+  {% for c in email_changes %}
+  <section class="card request" aria-labelledby="ec-{{ c.pk }}">
+    <h2 id="ec-{{ c.pk }}">{{ c.user.get_full_name|default:c.user.username }} wants to change their email</h2>
+    <p class="meta">From {{ c.old_email|default:"(none)" }} to <strong>{{ c.new_email }}</strong> · requested {{ c.created_at|date:"j M Y" }}</p>
+    <form method="post" action="{% url 'decide-email-change' c.pk %}">
+      {% csrf_token %}
+      <div class="grow"><label for="ec-c-{{ c.pk }}">Comment (optional)</label><input type="text" id="ec-c-{{ c.pk }}" name="comment" maxlength="500"></div>
+      <button type="submit" name="decision" value="approve">Approve</button>
+      <button type="submit" name="decision" value="reject" class="secondary">Reject</button>
+    </form>
+  </section>
+  {% endfor %}
+{% endif %}
+
 {% if pending %}
   <p class="muted">{{ pending_total }} request{{ pending_total|pluralize }} waiting. Cover is checked against today's floors.</p>
   {% for item in pending %}
@@ -74,7 +90,7 @@
   {% endwith %}
   {% endfor %}
   {% include "leave/_pager.html" with page_obj=pending_page base_query=pending_query param="ppage" label="Waiting requests pages" %}
-{% else %}
+{% elif not email_changes %}
   <p class="card">Nothing is waiting for approval.</p>
 {% endif %}
 

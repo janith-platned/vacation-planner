@@ -1,8 +1,13 @@
 from django.urls import path
 
-from . import audit_pages, breach_pages, console_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
+from . import account_pages, audit_pages, breach_pages, console_pages, floor_pages, manage_pages, member_pages, pages, settings_pages, views
 
 urlpatterns = [
+    path("account/", account_pages.account_page, name="account"),
+    path("account/phone/", account_pages.update_phone_view, name="account-phone"),
+    path("account/email/", account_pages.request_email_view, name="account-email"),
+    path("account/email/<int:pk>/cancel/", account_pages.cancel_email_view, name="account-email-cancel"),
+    path("manage/email-changes/<int:pk>/decide/", account_pages.decide_email_view, name="decide-email-change"),
     path("manage/audit/", audit_pages.audit_page, name="audit"),
     path("manage/audit/export.csv", audit_pages.audit_csv, name="audit-csv"),
     path("console/", console_pages.console_page, name="console"),
@@ -10,6 +15,7 @@ urlpatterns = [
     path("console/view-as/<int:pk>/", console_pages.view_as_start, name="view-as-start"),
     path("console/teams/add/", console_pages.add_team, name="console-add-team"),
     path("console/teams/<int:pk>/", console_pages.update_team, name="console-update-team"),
+    path("console/managers/<int:pk>/reports-to/", console_pages.set_reports_to, name="console-reports-to"),
     path("console/managers/add/", console_pages.add_manager, name="console-add-manager"),
     path("console/regions/add/", console_pages.add_region, name="console-add-region"),
     path("console/regions/<int:pk>/", console_pages.rename_region, name="console-rename-region"),

@@ -1,4 +1,4 @@
-from accounts.models import SystemRole
+from accounts.models import EmailChangeRequest, SystemRole
 
 from . import services
 from .models import LeaveRequest
@@ -12,4 +12,8 @@ def manager_nav(request):
     count = LeaveRequest.objects.filter(
         team__in=services.managed_teams(user), status=LeaveRequest.Status.PENDING
     ).count()
+    changes = EmailChangeRequest.objects.filter(status=EmailChangeRequest.Status.PENDING)
+    if user.system_role != SystemRole.ADMIN:
+        changes = changes.filter(approver=user)
+    count += changes.count()
     return {"pending_approvals": count, "view_as_manager": getattr(user, "view_as_manager", None)}

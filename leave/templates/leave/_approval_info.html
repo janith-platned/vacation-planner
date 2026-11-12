@@ -1,0 +1,5 @@
+{% comment %}Who approved (or rejected) a request and when. Expects `r`.{% endcomment %}
+{% if r.status == 'approved' or r.status == 'rejected' %}
+  {% if r.decided_by %}<span class="muted">{% if r.status == 'approved' %}Approved{% else %}Rejected{% endif %} by {{ r.decided_by.get_full_name|default:r.decided_by.username }}{% if r.decided_at %} on {{ r.decided_at|date:"j M Y" }}{% endif %}</span>
+  {% elif r.status == 'approved' %}<span class="muted">Approved automatically (within the approval limit)</span>{% endif %}
+{% endif %}

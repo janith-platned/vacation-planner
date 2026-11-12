@@ -31,7 +31,7 @@
     </select></div>
   <div><label for="f-region">Region</label>
     <select id="f-region" name="region"><option value="">All</option>
-      {% for r in regions %}<option value="{{ r.pk }}"{% if f_region == r.pk %} selected{% endif %}>{{ r.name }}</option>{% endfor %}
+      {% for r in all_regions %}<option value="{{ r.pk }}"{% if f_region == r.pk %} selected{% endif %}>{{ r.name }}</option>{% endfor %}
     </select></div>
   <div><label for="f-dept">Department</label>
     <select id="f-dept" name="department"><option value="">All</option>
@@ -48,12 +48,12 @@
   <tbody>
   {% for t in teams %}
     <tr>
-      <td><strong>{{ t.name }}</strong></td>
-      <td>{{ t.manager.get_full_name|default:t.manager.username }}</td>
-      <td>{{ t.region.name }}</td>
-      <td>{{ t.member_count }}</td>
-      <td>{{ t.departments|join:", "|default:"—" }}</td>
-      <td>
+      <td data-label="Team"><strong>{{ t.name }}</strong></td>
+      <td data-label="Manager">{{ t.manager.get_full_name|default:t.manager.username }}</td>
+      <td data-label="Region">{{ t.region.name }}</td>
+      <td data-label="People">{{ t.member_count }}</td>
+      <td data-label="Departments">{{ t.departments|join:", "|default:"—" }}</td>
+      <td class="act">
         {% if t.manager.system_role == 'manager' %}
         <form method="post" action="{% url 'view-as-start' t.manager.pk %}" class="inline">{% csrf_token %}<button class="link" type="submit">View as manager<span class="sr-only"> {{ t.manager.get_full_name|default:t.manager.username }} ({{ t.name }})</span></button></form> ·
         {% endif %}
@@ -65,7 +65,7 @@
             <div><label for="tm-{{ t.pk }}">Manager</label>
               <select id="tm-{{ t.pk }}" name="manager">{% for m in admins_and_managers %}<option value="{{ m.pk }}"{% if m.pk == t.manager_id %} selected{% endif %}>{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></div>
             <div><label for="tr-{{ t.pk }}">Region</label>
-              <select id="tr-{{ t.pk }}" name="region">{% for r in regions %}<option value="{{ r.pk }}"{% if r.pk == t.region_id %} selected{% endif %}>{{ r.name }}</option>{% endfor %}</select></div>
+              <select id="tr-{{ t.pk }}" name="region">{% for r in all_regions %}<option value="{{ r.pk }}"{% if r.pk == t.region_id %} selected{% endif %}>{{ r.name }}</option>{% endfor %}</select></div>
             <button type="submit">Save</button>
           </form>
         </details>
@@ -75,7 +75,7 @@
   </tbody>
 </table>
 </div>
-<p class="muted">{{ teams|length }} team{{ teams|length|pluralize }}.</p>
+{% include "leave/_pager.html" with page_obj=team_page base_query=team_query param="page" label="Teams pages" %}
 {% else %}
 <p class="card">No teams match.</p>
 {% endif %}
@@ -88,7 +88,7 @@
     <div><label for="nt-manager">Manager</label>
       <select id="nt-manager" name="manager" required>{% for m in admins_and_managers %}<option value="{{ m.pk }}">{{ m.get_full_name|default:m.username }}</option>{% endfor %}</select></div>
     <div><label for="nt-region">Region</label>
-      <select id="nt-region" name="region" required>{% for r in regions %}<option value="{{ r.pk }}">{{ r.name }}</option>{% endfor %}</select></div>
+      <select id="nt-region" name="region" required>{% for r in all_regions %}<option value="{{ r.pk }}">{{ r.name }}</option>{% endfor %}</select></div>
     <button type="submit">Create team</button>
   </form>
   <p class="muted" style="margin-bottom:0">A team belongs to one manager and one region. It starts with the Functional, Technical and Systems roles.</p>
@@ -102,6 +102,7 @@
     <form method="post" action="{% url 'view-as-start' m.pk %}" class="inline">{% csrf_token %}<button class="link" type="submit">View as manager<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></button></form>
   </div>
   {% empty %}<p class="muted" style="margin:0">No managers yet.</p>{% endfor %}
+{% include "leave/_pager.html" with page_obj=manager_page base_query=manager_query param="mpage" label="Managers pages" %}
   <details class="item" style="display:block">
     <summary>Add a manager</summary>
     <form method="post" action="{% url 'console-add-manager' %}" class="row-form" style="margin-top:8px">
@@ -127,6 +128,7 @@
     {% if not r.n %}<form method="post" action="{% url 'console-delete-region' r.pk %}" class="inline" onsubmit="return confirm('Delete this region?');">{% csrf_token %}<button class="link" type="submit">Delete<span class="sr-only"> {{ r.name }}</span></button></form>{% endif %}
   </div>
   {% endfor %}
+{% include "leave/_pager.html" with page_obj=region_page base_query=region_query param="rpage" label="Regions pages" %}
   <form method="post" action="{% url 'console-add-region' %}" class="row-form item">
     {% csrf_token %}<input type="text" name="name" maxlength="100" required placeholder="New region" aria-label="New region name"><button type="submit">Add region</button>
   </form>
@@ -144,6 +146,7 @@
     {% if not d.n %}<form method="post" action="{% url 'console-delete-department' d.pk %}" class="inline" onsubmit="return confirm('Delete this department?');">{% csrf_token %}<button class="link" type="submit">Delete<span class="sr-only"> {{ d.name }}</span></button></form>{% endif %}
   </div>
   {% endfor %}
+{% include "leave/_pager.html" with page_obj=department_page base_query=department_query param="dpage" label="Departments pages" %}
   <form method="post" action="{% url 'console-add-department' %}" class="row-form item">
     {% csrf_token %}<input type="text" name="name" maxlength="100" required placeholder="New department" aria-label="New department name"><button type="submit">Add department</button>
   </form>

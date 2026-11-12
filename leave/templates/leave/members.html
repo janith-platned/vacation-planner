@@ -62,17 +62,17 @@
   <tbody>
   {% for m in members %}
     <tr>
-      <td><a href="{% url 'member-detail' m.pk %}">{{ m.get_full_name|default:m.username }}</a><br><span class="muted">{{ m.username }}</span></td>
-      <td>{{ m.resource_role.name|default:"—" }}</td>
-      <td>{{ m.team.name }}</td>
-      <td><span class="badge{% if m.is_active %} active{% endif %}">{% if m.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-      <td><a href="{% url 'member-detail' m.pk %}">Manage<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></a></td>
+      <td data-label="Name"><a href="{% url 'member-detail' m.pk %}">{{ m.get_full_name|default:m.username }}</a><br><span class="muted">{{ m.username }}</span></td>
+      <td data-label="Role">{{ m.resource_role.name|default:"—" }}</td>
+      <td data-label="Team">{{ m.team.name }}</td>
+      <td data-label="Status"><span class="badge{% if m.is_active %} active{% endif %}">{% if m.is_active %}Active{% else %}Inactive{% endif %}</span></td>
+      <td class="act"><a href="{% url 'member-detail' m.pk %}">Manage<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></a></td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
 </div>
-<p class="muted">{{ members|length }} {{ members|length|pluralize:"person,people" }}.</p>
+{% include "leave/_pager.html" with page_obj=page_obj base_query=base_query param="page" %}
 {% else %}
 <p class="card">No people match.</p>
 {% endif %}

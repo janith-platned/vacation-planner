@@ -18,6 +18,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import Team
 
 from . import services
+from .pagination import paginate
 from .calendar_grid import build_month_grid
 from .exceptions import FloorViolationError, LeaveError
 from .forms import BookLeaveForm
@@ -140,14 +141,17 @@ def book_page(request):
 def my_leave_page(request):
     user = request.user
     today = services.today_for(user.team) if user.team_id else dt.date.today()
+    page_obj, base_query = paginate(
+        request, user.leave_requests.select_related("leave_type", "created_by", "decided_by").order_by("-start_date", "-id"), size=15
+    )
     rows = [
         {
             "request": r,
             "can_cancel": r.status in LeaveRequest.ACTIVE_STATUSES and r.end_date >= today,
         }
-        for r in user.leave_requests.select_related("leave_type", "created_by").order_by("-start_date", "-id")
+        for r in page_obj.object_list
     ]
-    return render(request, "leave/my_leave.html", {"rows": rows})
+    return render(request, "leave/my_leave.html", {"rows": rows, "page_obj": page_obj, "base_query": base_query})
 
 
 @login_required

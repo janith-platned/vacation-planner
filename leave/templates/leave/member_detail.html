@@ -35,13 +35,14 @@
   <tbody>
   {% for r in upcoming %}
     <tr>
-      <td>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
-      <td>{{ r.leave_type.name }}</td><td>{{ r.get_status_display }}</td>
+      <td data-label="Dates">{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
+      <td data-label="Type">{{ r.leave_type.name }}</td><td data-label="Status">{{ r.get_status_display }}<br>{% include "leave/_approval_info.html" %}</td>
       <td><a href="{% url 'request-detail' r.pk %}">Open<span class="sr-only"> request {{ r.start_date|date:"j M Y" }}</span></a></td>
     </tr>
   {% endfor %}
   </tbody>
 </table>
+{% include "leave/_pager.html" with page_obj=up_page base_query=up_query param="page" %}
 {% else %}
 <p class="muted">No upcoming leave.</p>
 {% endif %}

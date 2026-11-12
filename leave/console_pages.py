@@ -12,6 +12,7 @@ from accounts.middleware import VIEW_AS_SESSION_KEY
 from accounts.models import Department, Region, SystemRole, Team, User
 
 from . import console_services as svc
+from .pagination import paginate
 from .exceptions import LeaveError
 from .manage_pages import _person
 
@@ -52,7 +53,8 @@ def console_page(request):
         teams = teams.filter(region_id=region_id)
     if department_id:
         teams = teams.filter(members__department_id=department_id, members__is_active=True).distinct()
-    teams = list(teams.order_by("name"))
+    team_page, team_query = paginate(request, teams.order_by("name"), size=15)
+    teams = list(team_page.object_list)
     for team in teams:
         team.departments = sorted(
             set(
@@ -60,19 +62,30 @@ def console_page(request):
             )
         )
 
-    managers = list(
+    manager_page, manager_query = paginate(
+        request,
         User.objects.filter(system_role__in=[SystemRole.MANAGER], is_active=True)
         .annotate(team_count=Count("managed_teams"))
-        .order_by("first_name", "last_name", "username")
+        .order_by("first_name", "last_name", "username"),
+        param="mpage",
+        size=15,
     )
+    managers = list(manager_page.object_list)
+    region_page, region_query = paginate(request, Region.objects.annotate(n=Count("teams")).order_by("name"), param="rpage", size=10)
+    department_page, department_query = paginate(request, Department.objects.annotate(n=Count("users")).order_by("name"), param="dpage", size=10)
     return render(
         request,
         "leave/console.html",
         {
             "teams": teams,
             "managers": managers,
-            "regions": Region.objects.annotate(n=Count("teams")),
-            "departments": Department.objects.annotate(n=Count("users")),
+            "regions": region_page.object_list,
+            "departments": department_page.object_list,
+            "all_regions": Region.objects.all(),
+            "team_page": team_page, "team_query": team_query,
+            "manager_page": manager_page, "manager_query": manager_query,
+            "region_page": region_page, "region_query": region_query,
+            "department_page": department_page, "department_query": department_query,
             "q": q,
             "f_manager": manager_id,
             "f_region": region_id,

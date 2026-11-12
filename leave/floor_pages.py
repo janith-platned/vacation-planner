@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.views.decorators.http import require_POST
 
 from . import services
+from .pagination import paginate
 from .exceptions import LeaveError
 from .forms import OverrideFloorForm
 from .manage_pages import _day, _require_manager_role
@@ -109,6 +110,7 @@ def floors_page(request):
             }
         )
 
+    override_page, override_query = paginate(request, overrides, param="opage", size=10)
     return render(
         request,
         "leave/floors.html",
@@ -120,7 +122,9 @@ def floors_page(request):
             "prev_month": _shift(first, -1).strftime("%Y-%m"),
             "next_month": _shift(first, 1).strftime("%Y-%m"),
             "blocks": blocks,
-            "overrides": overrides,
+            "overrides": override_page.object_list,
+            "override_page": override_page,
+            "override_query": override_query,
             "roles": roles,
             "override_form": OverrideFloorForm(roles=roles, initial={"start_date": first, "end_date": first}),
             "weekdays": [calendar.day_abbr[i] for i in range(7)],

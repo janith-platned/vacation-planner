@@ -12,6 +12,7 @@ from django.views.decorators.http import require_POST
 from accounts.models import ResourceRole, SystemRole, User
 
 from . import members, services
+from .pagination import paginate
 from .exceptions import LeaveError
 from .floor_pages import _report_breaches
 from .forms import AddMemberForm, MemberForm
@@ -64,6 +65,7 @@ def members_page(request):
     elif status == "inactive":
         qs = qs.filter(is_active=False)
 
+    page_obj, base_query = paginate(request, qs, size=25)
     roles = _managed_roles(teams)
     return render(
         request,
@@ -74,7 +76,9 @@ def members_page(request):
             "q": q,
             "status": status,
             "status_options": STATUS_OPTIONS,
-            "members": list(qs),
+            "members": page_obj.object_list,
+            "page_obj": page_obj,
+            "base_query": base_query,
             "form": AddMemberForm(roles=roles),
             "multi_team": len(teams) > 1,
         },
@@ -118,6 +122,7 @@ def member_detail_page(request, pk: int):
     upcoming = LeaveRequest.objects.filter(
         user=person, status__in=LeaveRequest.ACTIVE_STATUSES, end_date__gte=today
     ).select_related("leave_type").order_by("start_date")
+    up_page, up_query = paginate(request, upcoming, size=10)
     roles = ResourceRole.objects.filter(team=person.team, active=True).order_by("name")
     return render(
         request,
@@ -134,7 +139,9 @@ def member_detail_page(request, pk: int):
                     "department": person.department_id,
                 },
             ),
-            "upcoming": list(upcoming),
+            "upcoming": up_page.object_list,
+            "up_page": up_page,
+            "up_query": up_query,
         },
     )
 

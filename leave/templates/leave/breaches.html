@@ -41,7 +41,7 @@
 </form>
 
 {% if rows %}
-<p><strong>{{ rows|length }}</strong> role-day{{ rows|length|pluralize }} below the floor.</p>
+<p><strong>{{ total }}</strong> role-day{{ total|pluralize }} below the floor.</p>
 {% for b in rows %}
 <section class="card breach" aria-label="{{ b.role }} on {{ b.date|date:'D j M Y' }}">
   <h2>{{ b.date|date:"D j M Y" }} · {{ b.role }}{% if multi_team %} · {{ b.team.name }}{% endif %}</h2>
@@ -68,6 +68,7 @@
   {% endfor %}
 </section>
 {% endfor %}
+{% include "leave/_pager.html" with page_obj=page_obj base_query=base_query param="page" %}
 {% else %}
 <p class="card">No days are below their floors in the next {{ days }} days.</p>
 {% endif %}

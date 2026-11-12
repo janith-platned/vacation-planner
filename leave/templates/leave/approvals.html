@@ -41,7 +41,7 @@
 </div>
 
 {% if pending %}
-  <p class="muted">{{ pending|length }} request{{ pending|length|pluralize }} waiting. Cover is checked against today's floors.</p>
+  <p class="muted">{{ pending_total }} request{{ pending_total|pluralize }} waiting. Cover is checked against today's floors.</p>
   {% for item in pending %}
   {% with r=item.request %}
   <section class="card request" aria-labelledby="req-{{ r.pk }}">
@@ -73,6 +73,7 @@
   </section>
   {% endwith %}
   {% endfor %}
+  {% include "leave/_pager.html" with page_obj=pending_page base_query=pending_query param="ppage" label="Waiting requests pages" %}
 {% else %}
   <p class="card">Nothing is waiting for approval.</p>
 {% endif %}
@@ -124,11 +125,11 @@
   <tbody>
   {% for r in page_obj.object_list %}
     <tr>
-      <td><a href="{% url 'request-detail' r.pk %}">{{ r.user.get_full_name|default:r.user.username }}</a><br><span class="muted">{{ r.user.resource_role.name }} · {{ r.team.name }}</span></td>
+      <td data-label="Employee"><a href="{% url 'request-detail' r.pk %}">{{ r.user.get_full_name|default:r.user.username }}</a><br><span class="muted">{{ r.user.resource_role.name }} · {{ r.team.name }}</span></td>
       <td data-label="Dates">{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
       <td class="num" data-label="Working days">{{ r.working_days }}</td>
       <td data-label="Type">{{ r.leave_type.name }}</td>
-      <td><span class="badge {{ r.status }}">{{ r.get_status_display }}</span>{% if r.floor_overridden %} <span class="flag">Floor override</span>{% endif %}</td>
+      <td data-label="Status"><span class="badge {{ r.status }}">{{ r.get_status_display }}</span>{% if r.floor_overridden %} <span class="flag">Floor override</span>{% endif %}<br>{% include "leave/_approval_info.html" %}</td>
       <td class="act"><a href="{% url 'request-detail' r.pk %}">{% if r.status == 'approved' %}Manage{% else %}View{% endif %}<span class="sr-only"> {{ r.user.get_full_name|default:r.user.username }}, {{ r.start_date|date:"j M Y" }}</span></a></td>
     </tr>
   {% endfor %}

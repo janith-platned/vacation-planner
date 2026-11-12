@@ -53,7 +53,7 @@
       <span class="muted">· {{ p.request.leave_type.name }} · {{ p.request.start_date|date:"j M" }}{% if p.request.end_date != p.request.start_date %} to {{ p.request.end_date|date:"j M Y" }}{% else %} {{ p.request.start_date|date:"Y" }}{% endif %} · {{ p.request.get_status_display }}</span>
     </span>
     <span>
-      <a href="{% url 'request-detail' p.request.pk %}">Open</a>
+      <a href="{% url 'request-detail' p.request.pk %}">Open<span class="sr-only"> {{ p.user.get_full_name|default:p.user.username }}'s request</span></a>
     </span>
     <details style="width:100%">
       <summary>Cancel this leave</summary>

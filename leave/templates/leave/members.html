@@ -66,7 +66,7 @@
       <td>{{ m.resource_role.name|default:"—" }}</td>
       <td>{{ m.team.name }}</td>
       <td><span class="badge{% if m.is_active %} active{% endif %}">{% if m.is_active %}Active{% else %}Inactive{% endif %}</span></td>
-      <td><a href="{% url 'member-detail' m.pk %}">Manage</a></td>
+      <td><a href="{% url 'member-detail' m.pk %}">Manage<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></a></td>
     </tr>
   {% endfor %}
   </tbody>

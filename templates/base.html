@@ -11,6 +11,7 @@
       --accent: #1d5fd1; --accent-text: #ffffff;
       --ok: #e6f4ea; --low: #fff4d6; --full: #fde3e1; --nofloor: #eef0f2; --off: #f1f1ef;
       --ok-b: #2e7d46; --low-b: #b7791f; --full-b: #c0392b;
+      --low-t: #7a5200; /* amber for small text: the border amber is too light to read */
     }
     @media (prefers-color-scheme: dark) {
       :root {
@@ -18,6 +19,7 @@
         --accent: #6ea0ff; --accent-text: #0b1220;
         --ok: #17301f; --low: #3a2e10; --full: #3d1b19; --nofloor: #23282d; --off: #1a1d20;
         --ok-b: #5fc07d; --low-b: #e0a94a; --full-b: #ef7b6f;
+        --low-t: #e0a94a;
       }
     }
     * { box-sizing: border-box; }
@@ -45,27 +47,31 @@
     table.list th, table.list td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
     .status { font-weight: 600; }
     .warn { border-left: 4px solid var(--full-b); padding-left: 12px; }
+    .skip { position: absolute; left: -999px; top: 0; background: var(--accent); color: var(--accent-text); padding: 8px 14px; z-index: 10; }
+    .skip:focus { left: 8px; top: 8px; }
+    nav a[aria-current="page"] { font-weight: 700; text-decoration: none; color: var(--text); }
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
     :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
   </style>
   {% block head %}{% endblock %}
 </head>
 <body>
+  <a class="skip" href="#main">Skip to main content</a>
   <header class="top">
     <a class="brand" href="{% url 'calendar' %}">Vacation Planner</a>
     {% if user.is_authenticated %}
     <nav aria-label="Main">
-      <a href="{% url 'calendar' %}">Calendar</a>
-      <a href="{% url 'book-leave' %}">Book leave</a>
-      <a href="{% url 'my-leave' %}">My leave</a>
+      <a href="{% url 'calendar' %}"{% if request.resolver_match.url_name == 'calendar' %} aria-current="page"{% endif %}>Calendar</a>
+      <a href="{% url 'book-leave' %}"{% if request.resolver_match.url_name == 'book-leave' %} aria-current="page"{% endif %}>Book leave</a>
+      <a href="{% url 'my-leave' %}"{% if request.resolver_match.url_name == 'my-leave' %} aria-current="page"{% endif %}>My leave</a>
       {% if user.system_role != 'member' %}
-      <a href="{% url 'approvals' %}">Approvals{% if pending_approvals %} <strong>({{ pending_approvals }})</strong>{% endif %}</a>
-      <a href="{% url 'floors' %}">Floors</a>
-      <a href="{% url 'breaches' %}">Breaches</a>
-      <a href="{% url 'members' %}">Team</a>
-      <a href="{% url 'settings' %}">Settings</a>
-      <a href="{% url 'audit' %}">Audit</a>
-      {% if user.system_role == 'admin' %}<a href="{% url 'console' %}">Console</a>{% endif %}
+      <a href="{% url 'approvals' %}"{% if request.resolver_match.url_name == 'approvals' %} aria-current="page"{% endif %}>Approvals{% if pending_approvals %} <strong>({{ pending_approvals }})</strong>{% endif %}</a>
+      <a href="{% url 'floors' %}"{% if request.resolver_match.url_name == 'floors' %} aria-current="page"{% endif %}>Floors</a>
+      <a href="{% url 'breaches' %}"{% if request.resolver_match.url_name == 'breaches' %} aria-current="page"{% endif %}>Breaches</a>
+      <a href="{% url 'members' %}"{% if request.resolver_match.url_name == 'members' %} aria-current="page"{% endif %}>Team</a>
+      <a href="{% url 'settings' %}"{% if request.resolver_match.url_name == 'settings' %} aria-current="page"{% endif %}>Settings</a>
+      <a href="{% url 'audit' %}"{% if request.resolver_match.url_name == 'audit' %} aria-current="page"{% endif %}>Audit</a>
+      {% if user.system_role == 'admin' %}<a href="{% url 'console' %}"{% if request.resolver_match.url_name == 'console' %} aria-current="page"{% endif %}>Console</a>{% endif %}
       <a href="{% url 'admin:index' %}">Admin</a>
       {% endif %}
       <a href="{% url 'password-change' %}">Password</a>
@@ -80,7 +86,7 @@
     <form method="post" action="{% url 'view-as-stop' %}" style="display:inline">{% csrf_token %}<button class="link" type="submit">Exit</button></form>
   </div>
   {% endif %}
-  <main>
+  <main id="main" tabindex="-1">
     {% if messages %}<ul class="messages" role="status">{% for message in messages %}<li class="{{ message.tags }}">{{ message }}</li>{% endfor %}</ul>{% endif %}
     {% block content %}{% endblock %}
   </main>

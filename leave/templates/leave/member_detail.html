@@ -37,7 +37,7 @@
     <tr>
       <td>{{ r.start_date|date:"D j M Y" }}{% if r.end_date != r.start_date %} to {{ r.end_date|date:"D j M Y" }}{% endif %}</td>
       <td>{{ r.leave_type.name }}</td><td>{{ r.get_status_display }}</td>
-      <td><a href="{% url 'request-detail' r.pk %}">Open</a></td>
+      <td><a href="{% url 'request-detail' r.pk %}">Open<span class="sr-only"> request {{ r.start_date|date:"j M Y" }}</span></a></td>
     </tr>
   {% endfor %}
   </tbody>

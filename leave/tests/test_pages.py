@@ -89,14 +89,14 @@ def test_member_calendar_shows_their_role_and_anonymous_numbers(client, busy):
     assert response.status_code == 200
     assert "December 2026" in body and "Technical" in body
     assert "1 of 3 off" in body and "Floor 2" in body and "Full" in body
-    assert "Functional" not in body.split("<main>")[1]  # no other role's data for a member
+    assert "Functional" not in body.split("<main id=\"main\"")[1]  # no other role's data for a member
 
 
 def test_member_calendar_never_names_colleagues(client, busy, manager):
     techs, functional = busy
     client.force_login(techs[0])
     body = client.get(reverse("calendar"), {"month": "2026-12"}).content.decode()
-    main = body.split("<main>")[1]
+    main = body.split("<main id=\"main\"")[1]
     for other in (techs[1], techs[2], functional, manager):
         assert other.username not in main and other.first_name not in main
 
@@ -249,7 +249,7 @@ def test_booking_below_the_floor_explains_dates_without_names(client, busy, vaca
     assert "can't cover these days" in body
     assert "minimum 2 available, this would leave 1" in body
     assert "Mon 7 Dec 2026" in body and "Tue 8 Dec 2026" not in body.split("can't cover")[1].split("</ul>")[0]
-    main = body.split("<main>")[1]
+    main = body.split("<main id=\"main\"")[1]
     for other in (techs[1], functional):
         assert other.username not in main and other.first_name not in main
     assert not LeaveRequest.objects.filter(user=techs[0]).exists()

@@ -22,6 +22,8 @@ Email notifications: managers are emailed when a request needs approval; employe
 
 The Audit screen shows who did what and when (leave, floors, people, settings, administration) with filters by person, team, type and date, and a CSV export that respects the same filters (cells that start like formulas are neutralised). Managers see only their own teams' history; administrators also see organisation-wide changes; while viewing as a manager an administrator sees that manager's teams only. Entries are stamped with their team when written, older entries are assigned one by a migration, and the log cannot be edited or deleted.
 
+Accessibility: every screen has a skip link, one h1, labelled fields, marked current page, and status shown in words as well as colour. The colour palette is checked against WCAG AA contrast (4.5:1) in both light and dark themes by the test suite, and `scripts/a11y/` renders every screen from the demo data and scans it with axe-core (no violations at the last scan). Automated checks cannot replace a real keyboard and screen-reader pass; do one before go-live.
+
 Not built yet: Entra SSO, half-days, MFA, calendar sync. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.

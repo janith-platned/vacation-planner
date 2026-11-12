@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Audit log · Vacation Planner{% endblock %}
+{% block head %}
+<style>
+  .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 8px 0 12px; }
+  .filters label { margin: 0 0 4px; font-size: .85rem; }
+  .table-wrap { overflow-x: auto; }
+  table.list td { font-size: .92rem; }
+  .pager { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; justify-content: space-between; margin-top: 12px; }
+  .pager .links { display: flex; gap: 8px; }
+  @media (max-width: 640px) {
+    table.list thead { display: none; }
+    table.list, table.list tbody, table.list tr, table.list td { display: block; width: 100%; }
+    table.list tr { border: 1px solid var(--border); border-radius: 8px; padding: 8px; margin-bottom: 8px; background: var(--surface); }
+    table.list td { border: 0; padding: 2px 0; }
+  }
+</style>
+{% endblock %}
+{% block content %}
+<h1>Audit log</h1>
+<p class="muted">Who did what and when, for the teams you manage. Entries cannot be edited or deleted. Times are UTC.</p>
+
+<form method="get" class="filters" role="search" aria-label="Filter the audit log">
+  <div><label for="q">Person</label><input type="search" id="q" name="q" value="{{ f.q }}" placeholder="actor or employee"></div>
+  {% if teams|length > 1 %}
+  <div><label for="team">Team</label>
+    <select id="team" name="team"><option value="">All my teams</option>
+      {% for t in teams %}<option value="{{ t.pk }}"{% if f.team == t.pk|stringformat:"s" %} selected{% endif %}>{{ t.name }}</option>{% endfor %}
+    </select></div>
+  {% endif %}
+  <div><label for="category">Type</label>
+    <select id="category" name="category">
+      {% for value, label in categories %}<option value="{{ value }}"{% if f.category == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select></div>
+  <div><label for="from">From</label><input type="date" id="from" name="from" value="{{ f.from }}"></div>
+  <div><label for="to">To</label><input type="date" id="to" name="to" value="{{ f.to }}"></div>
+  <button type="submit">Apply</button>
+  {% if filtered %}<a href="{% url 'audit' %}">Reset</a>{% endif %}
+  <a class="button secondary" href="{% url 'audit-csv' %}{% if base_query %}?{{ base_query }}{% endif %}">Export CSV</a>
+</form>
+
+{% if rows %}
+<div class="table-wrap">
+<table class="list">
+  <thead><tr><th scope="col">When (UTC)</th><th scope="col">Who</th><th scope="col">Action</th><th scope="col">About</th><th scope="col">Details</th></tr></thead>
+  <tbody>
+  {% for r in rows %}
+    <tr>
+      <td>{{ r.entry.created_at|date:"j M Y, H:i" }}{% if r.entry.team %}<br><span class="muted">{{ r.entry.team.name }}</span>{% endif %}</td>
+      <td>{{ r.entry.actor.get_full_name|default:r.entry.actor.username|default:"System" }}{% if r.entry.on_behalf_of %}<br><span class="muted">for {{ r.entry.on_behalf_of.get_full_name|default:r.entry.on_behalf_of.username }}</span>{% endif %}</td>
+      <td>{{ r.label }}</td>
+      <td>{{ r.target|default:"—" }}</td>
+      <td class="muted">{{ r.detail }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+<nav class="pager" aria-label="Pages">
+  <span class="muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+  <span class="links">
+    {% if page_obj.has_previous %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.previous_page_number }}">Previous</a>{% endif %}
+    {% if page_obj.has_next %}<a class="button secondary" href="?{% if base_query %}{{ base_query }}&amp;{% endif %}page={{ page_obj.next_page_number }}">Next</a>{% endif %}
+  </span>
+</nav>
+{% else %}
+<p class="card">No entries match.</p>
+{% endif %}
+{% endblock %}

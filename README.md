@@ -20,7 +20,9 @@ The administrator console (admins only) lists every team with filters by manager
 
 Email notifications: managers are emailed when a request needs approval; employees are emailed when a manager approves, rejects, changes, cancels or logs their leave. Nobody is emailed about their own action, and an employee's email contains only their own leave. Each team can switch either kind off in Settings. Notifications are queued with the change and sent after it commits; failures are recorded and retried with `python manage.py send_notifications` (gives up after 5 attempts). By default emails are printed to the server log (fine for the demo); set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL` and `SITE_URL` for real delivery.
 
-Not built yet: the audit log screen, Entra SSO. The screens are plain server-rendered Django templates; HTMX is not used yet.
+The Audit screen shows who did what and when (leave, floors, people, settings, administration) with filters by person, team, type and date, and a CSV export that respects the same filters (cells that start like formulas are neutralised). Managers see only their own teams' history; administrators also see organisation-wide changes; while viewing as a manager an administrator sees that manager's teams only. Entries are stamped with their team when written, older entries are assigned one by a migration, and the log cannot be edited or deleted.
+
+Not built yet: Entra SSO, half-days, MFA, calendar sync. The screens are plain server-rendered Django templates; HTMX is not used yet.
 
 Sign-in: create the first administrator with `python manage.py createsuperuser`. Accounts created any other way must change their password at first sign-in.
 

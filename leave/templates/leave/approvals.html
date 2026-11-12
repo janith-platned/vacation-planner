@@ -19,7 +19,7 @@
   .badge.approved { background: var(--ok); border-color: var(--ok-b); }
   .badge.pending { background: var(--low); border-color: var(--low-b); }
   .badge.rejected, .badge.cancelled_by_manager { background: var(--full); border-color: var(--full-b); }
-  .flag { font-size: .8rem; color: var(--low-b); font-weight: 600; white-space: nowrap; }
+  .flag { font-size: .8rem; color: var(--low-t); font-weight: 600; white-space: nowrap; }
   .table-wrap { overflow-x: auto; }
   table.list td.num { text-align: right; white-space: nowrap; }
   table.list td.act { text-align: right; white-space: nowrap; }
@@ -129,7 +129,7 @@
       <td class="num" data-label="Working days">{{ r.working_days }}</td>
       <td data-label="Type">{{ r.leave_type.name }}</td>
       <td><span class="badge {{ r.status }}">{{ r.get_status_display }}</span>{% if r.floor_overridden %} <span class="flag">Floor override</span>{% endif %}</td>
-      <td class="act"><a href="{% url 'request-detail' r.pk %}">{% if r.status == 'approved' %}Manage{% else %}View{% endif %}</a></td>
+      <td class="act"><a href="{% url 'request-detail' r.pk %}">{% if r.status == 'approved' %}Manage{% else %}View{% endif %}<span class="sr-only"> {{ r.user.get_full_name|default:r.user.username }}, {{ r.start_date|date:"j M Y" }}</span></a></td>
     </tr>
   {% endfor %}
   </tbody>

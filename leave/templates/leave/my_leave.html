@@ -15,7 +15,7 @@
       <td>
         {% if row.can_cancel %}
         <form method="post" action="{% url 'cancel-leave' row.request.pk %}" onsubmit="return confirm('Cancel this leave?');">
-          {% csrf_token %}<button class="link" type="submit">Cancel</button>
+          {% csrf_token %}<button class="link" type="submit">Cancel<span class="sr-only"> leave from {{ row.request.start_date|date:"j M Y" }}</span></button>
         </form>
         {% endif %}
       </td>

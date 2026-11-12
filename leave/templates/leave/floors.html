@@ -95,8 +95,8 @@
         {% if not c.in_month %}<td class="out"><span class="d">{{ c.date.day }}</span></td>
         {% elif not c.working %}<td class="off"><span class="d">{{ c.date.day }}</span><br>Off</td>
         {% else %}<td class="{{ c.state }}">
-          <span class="d">{{ c.date.day }}</span>{% if c.override %} <span class="ovr" title="Date override">*</span>{% endif %}<br>
-          {% if c.count.floor is None %}No floor{% else %}Floor {{ c.count.floor }}<br>{{ c.available }} avail.{% endif %}
+          <span class="d"><span class="sr-only">{{ c.date|date:"j F" }}, </span>{{ c.date.day }}</span>{% if c.override %} <span class="ovr" title="Date override">*</span>{% endif %}<br>
+          {% if c.count.floor is None %}No floor{% else %}Floor {{ c.count.floor }}<br>{{ c.available }} avail.{% if c.state == 'breach' %}<br><strong>Below floor</strong>{% elif c.state == 'low' %}<br><span class="sr-only">At the floor</span>{% else %}<span class="sr-only"> Cover holds</span>{% endif %}{% endif %}
         </td>{% endif %}
       {% endfor %}
       </tr>
@@ -130,7 +130,7 @@
       <td>{{ o.min_available }}</td>
       <td>
         <form method="post" action="{% url 'delete-override' o.pk %}" onsubmit="return confirm('Remove this override?');">
-          {% csrf_token %}<button class="link" type="submit">Remove</button>
+          {% csrf_token %}<button class="link" type="submit">Remove<span class="sr-only"> {{ o.resource_role.name }} override from {{ o.start_date|date:"j M Y" }}</span></button>
         </form>
       </td>
     </tr>

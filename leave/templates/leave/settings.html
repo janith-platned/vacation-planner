@@ -121,7 +121,7 @@
   {% for h in holidays %}
     <tr>
       <td>{{ h.date|date:"D j M Y" }}</td><td>{{ h.name }}</td>
-      <td><form method="post" action="{% url 'delete-holiday' h.pk %}" onsubmit="return confirm('Remove this holiday?');">{% csrf_token %}<button class="link" type="submit">Remove</button></form></td>
+      <td><form method="post" action="{% url 'delete-holiday' h.pk %}" onsubmit="return confirm('Remove this holiday?');">{% csrf_token %}<button class="link" type="submit">Remove<span class="sr-only"> {{ h.name }}</span></button></form></td>
     </tr>
   {% endfor %}
   </tbody>

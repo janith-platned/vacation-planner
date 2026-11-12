@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Floor breaches · Vacation Planner{% endblock %}
+{% block title %}Floor Breaches · Vacation Planner{% endblock %}
 {% block head %}
 <style>
   .filters { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: flex-end; margin: 8px 0 16px; }
@@ -14,7 +14,7 @@
 </style>
 {% endblock %}
 {% block content %}
-<h1>Floor breaches</h1>
+<h1>Floor Breaches</h1>
 <p class="muted">Working days where fewer people are available than the floor requires. Nothing is cancelled automatically: open the request to change its dates, or cancel it with a reason the employee will see.</p>
 
 <form method="get" class="filters" aria-label="Filter breaches">
@@ -32,7 +32,7 @@
       {% for name in roles %}<option value="{{ name }}"{% if role == name %} selected{% endif %}>{{ name }}</option>{% endfor %}
     </select>
   </div>
-  <div><label for="days">Look ahead</label>
+  <div><label for="days">Look Ahead</label>
     <select id="days" name="days">
       {% for value, label in windows %}<option value="{{ value }}"{% if days == value %} selected{% endif %}>{{ label }}</option>{% endfor %}
     </select>
@@ -56,12 +56,12 @@
       <a href="{% url 'request-detail' p.request.pk %}">Open<span class="sr-only"> {{ p.user.get_full_name|default:p.user.username }}'s request</span></a>
     </span>
     <details style="width:100%">
-      <summary>Cancel this leave</summary>
+      <summary>Cancel This Leave</summary>
       <form method="post" action="{% url 'cancel-request' p.request.pk %}">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ request.get_full_path }}">
         <input type="text" name="reason" maxlength="500" required placeholder="Reason (shown to the employee)" aria-label="Reason for cancelling">
-        <button type="submit" class="secondary">Cancel and release the days</button>
+        <button type="submit" class="secondary">Cancel and Release the Days</button>
       </form>
     </details>
   </div>

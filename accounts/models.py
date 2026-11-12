@@ -14,7 +14,7 @@ def default_working_days() -> list[int]:
 
 
 class SystemRole(models.TextChoices):
-    MEMBER = "member", "Team member"
+    MEMBER = "member", "Team Member"
     MANAGER = "manager", "Manager"
     ADMIN = "admin", "Administrator"
 

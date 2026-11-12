@@ -1,7 +1,7 @@
 {% extends "base.html" %}
-{% block title %}Book leave · Vacation Planner{% endblock %}
+{% block title %}Book Leave · Vacation Planner{% endblock %}
 {% block content %}
-<h1>Book leave</h1>
+<h1>Book Leave</h1>
 
 {% if violations %}
 <div class="card warn" role="alert">
@@ -16,11 +16,11 @@
 <form method="post" id="book-form" class="card" style="max-width: 520px">
   {% csrf_token %}
   {{ form.non_field_errors }}
-  <label for="{{ form.leave_type.id_for_label }}">Leave type</label>
+  <label for="{{ form.leave_type.id_for_label }}">Leave Type</label>
   {{ form.leave_type }} {{ form.leave_type.errors }}
-  <label for="{{ form.start_date.id_for_label }}">First day</label>
+  <label for="{{ form.start_date.id_for_label }}">First Day</label>
   {{ form.start_date }} {{ form.start_date.errors }}
-  <label for="{{ form.end_date.id_for_label }}">Last day</label>
+  <label for="{{ form.end_date.id_for_label }}">Last Day</label>
   {{ form.end_date }} {{ form.end_date.errors }}
   <p id="check-result" class="muted" aria-live="polite"></p>
   <p><button type="submit">Submit</button> <a class="button secondary" href="{% url 'calendar' %}">Cancel</a></p>

@@ -23,22 +23,22 @@
 <p class="card">You don't manage any teams yet.</p>
 {% else %}
 <details class="card add"{% if not members %} open{% endif %}>
-  <summary>Add a team member</summary>
+  <summary>Add a Team Member</summary>
   <form method="post" action="{% url 'add-member' %}" class="add-form" style="margin-top:8px">
     {% csrf_token %}
-    <div><label for="{{ form.first_name.id_for_label }}">First name</label>{{ form.first_name }}</div>
-    <div><label for="{{ form.last_name.id_for_label }}">Last name</label>{{ form.last_name }}</div>
+    <div><label for="{{ form.first_name.id_for_label }}">First Name</label>{{ form.first_name }}</div>
+    <div><label for="{{ form.last_name.id_for_label }}">Last Name</label>{{ form.last_name }}</div>
     <div><label for="{{ form.username.id_for_label }}">Username</label>{{ form.username }}</div>
     <div><label for="{{ form.email.id_for_label }}">Email (optional)</label>{{ form.email }}</div>
     <div><label for="{{ form.resource_role.id_for_label }}">Role{% if multi_team %} and team{% endif %}</label>{{ form.resource_role }}</div>
     <div><label for="{{ form.department.id_for_label }}">Department</label>{{ form.department }}</div>
-    <button type="submit">Add member</button>
+    <button type="submit">Add Member</button>
   </form>
   <p class="muted" style="margin-bottom:0">A temporary password is shown once after adding. The member must change it at first sign-in.</p>
 </details>
 
 <form method="get" class="filters" role="search" aria-label="Filter people">
-  <div><label for="q">Search by name</label><input type="search" id="q" name="q" value="{{ q }}"></div>
+  <div><label for="q">Search by Name</label><input type="search" id="q" name="q" value="{{ q }}"></div>
   {% if multi_team %}
   <div><label for="team">Team</label>
     <select id="team" name="team">

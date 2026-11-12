@@ -40,7 +40,7 @@ def test_members_get_403_and_actions_need_post(client, techs, manager, team):
 def test_page_renders_all_sections(client, manager, team, vacation):
     client.force_login(manager)
     body = client.get(reverse("settings")).content.decode()
-    for text in ("Team rules", "Resource roles", "Leave types", "Holidays", "Vacation", "Notifications"):
+    for text in ("Team Rules", "Resource Roles", "Leave Types", "Holidays", "Vacation", "Notifications"):
         assert text in body
 
 

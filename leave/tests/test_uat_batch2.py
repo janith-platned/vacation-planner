@@ -146,7 +146,7 @@ def test_editing_requires_a_number_too(client, manager, team, vacation):
 def test_an_unused_leave_type_can_be_deleted(client, manager, team):
     lt = LeaveType.objects.create(team=team, name="Sabbatical", approval_threshold_override=5)
     client.force_login(manager)
-    assert "Delete this leave type" in client.get(reverse("settings")).content.decode()
+    assert "Delete This Leave Type" in client.get(reverse("settings")).content.decode()
     body = post(client, "delete-leave-type", {}, lt.pk)
     assert "Deleted the leave type &quot;Sabbatical&quot;" in body
     assert not LeaveType.objects.filter(pk=lt.pk).exists()
@@ -157,7 +157,7 @@ def test_a_used_leave_type_cannot_be_deleted_but_can_be_switched_off(client, man
     services.book_leave(user=techs[0], leave_type=vacation, start_date=day(0), end_date=day(0), today=TODAY)
     client.force_login(manager)
     page = client.get(reverse("settings")).content.decode()
-    assert "Used by 1 request, so it cannot be deleted" in page and "Delete this leave type" not in page
+    assert "Used by 1 request, so it cannot be deleted" in page and "Delete This Leave Type" not in page
     body = post(client, "delete-leave-type", {}, vacation.pk)
     assert "used by 1 request, so it cannot be deleted" in body
     assert LeaveType.objects.filter(pk=vacation.pk).exists()

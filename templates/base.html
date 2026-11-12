@@ -79,15 +79,15 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-  <a class="skip" href="#main">Skip to main content</a>
+  <a class="skip" href="#main">Skip to Main Content</a>
   <header class="top">
     <a class="brand" href="{% url 'calendar' %}">Vacation Planner</a>
     {% if user.is_authenticated %}
     <button type="button" class="nav-toggle" aria-expanded="false" aria-controls="main-nav"><span class="bars" aria-hidden="true"></span><span class="sr-only">Menu</span></button>
     <nav id="main-nav" aria-label="Main">
       <a href="{% url 'calendar' %}"{% if request.resolver_match.url_name == 'calendar' %} aria-current="page"{% endif %}>Calendar</a>
-      <a href="{% url 'book-leave' %}"{% if request.resolver_match.url_name == 'book-leave' %} aria-current="page"{% endif %}>Book leave</a>
-      <a href="{% url 'my-leave' %}"{% if request.resolver_match.url_name == 'my-leave' %} aria-current="page"{% endif %}>My leave</a>
+      <a href="{% url 'book-leave' %}"{% if request.resolver_match.url_name == 'book-leave' %} aria-current="page"{% endif %}>Book Leave</a>
+      <a href="{% url 'my-leave' %}"{% if request.resolver_match.url_name == 'my-leave' %} aria-current="page"{% endif %}>My Leave</a>
       {% if user.system_role != 'member' %}
       <a href="{% url 'approvals' %}"{% if request.resolver_match.url_name == 'approvals' %} aria-current="page"{% endif %}>Approvals{% if pending_approvals %} <strong>({{ pending_approvals }})</strong>{% endif %}</a>
       <a href="{% url 'floors' %}"{% if request.resolver_match.url_name == 'floors' %} aria-current="page"{% endif %}>Floors</a>
@@ -99,7 +99,7 @@
       {% endif %}
       <a href="{% url 'account' %}"{% if request.resolver_match.url_name == 'account' %} aria-current="page"{% endif %}>Account</a>
       <span class="muted">{{ user.get_full_name|default:user.username }}</span>
-      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link" type="submit">Sign out</button></form>
+      <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link" type="submit">Sign Out</button></form>
     </nav>
     {% endif %}
   </header>

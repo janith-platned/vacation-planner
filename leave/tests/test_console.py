@@ -102,7 +102,7 @@ def test_view_as_applies_to_floors_settings_and_team_screens(client, admin_user,
     client.force_login(admin_user)
     post(client, "view-as-start", {}, other_manager.pk)
     assert "Montreal" in client.get(reverse("settings")).content.decode()
-    assert "Toronto" not in client.get(reverse("settings")).content.decode().split("Team rules")[0]
+    assert "Toronto" not in client.get(reverse("settings")).content.decode().split("Team Rules")[0]
     assert "Mia Tester" in client.get(reverse("members")).content.decode()
     assert "Tom Tester" not in client.get(reverse("members")).content.decode()
 

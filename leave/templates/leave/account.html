@@ -26,22 +26,22 @@
   <p>Current email: <strong>{{ user.email|default:"none" }}</strong></p>
   {% if pending %}
   <p role="status">Waiting for approval: change to <strong>{{ pending.new_email }}</strong>, requested {{ pending.created_at|date:"j M Y" }}. Your current email stays in use until it is approved.</p>
-  <form method="post" action="{% url 'account-email-cancel' pending.pk %}">{% csrf_token %}<button type="submit" class="secondary">Cancel this request</button></form>
+  <form method="post" action="{% url 'account-email-cancel' pending.pk %}">{% csrf_token %}<button type="submit" class="secondary">Cancel This Request</button></form>
   {% else %}
   <form method="post" action="{% url 'account-email' %}" class="row-form">
     {% csrf_token %}
-    <div><label for="acc-email">New email</label><input type="email" id="acc-email" name="email" required maxlength="254" autocomplete="email"></div>
-    <div><label for="acc-pw">Current password</label><input type="password" id="acc-pw" name="password" required autocomplete="current-password"></div>
+    <div><label for="acc-email">New Email</label><input type="email" id="acc-email" name="email" required maxlength="254" autocomplete="email"></div>
+    <div><label for="acc-pw">Current Password</label><input type="password" id="acc-pw" name="password" required autocomplete="current-password"></div>
     <button type="submit">{% if approver %}Request change{% else %}Change email{% endif %}</button>
   </form>
   <p class="muted" style="margin-bottom:0">{% if approver %}{{ approver.get_full_name|default:approver.username }} must approve an email change.{% else %}You have no approving manager, so the change takes effect immediately.{% endif %}</p>
   {% endif %}
-  {% for c in recent %}{% if forloop.first %}<h3 style="font-size:1rem;margin-top:16px">Recent requests</h3><ul>{% endif %}
+  {% for c in recent %}{% if forloop.first %}<h3 style="font-size:1rem;margin-top:16px">Recent Requests</h3><ul>{% endif %}
     <li>{{ c.created_at|date:"j M Y" }}: {{ c.new_email }} — {{ c.get_status_display }}{% if c.comment %} ({{ c.comment }}){% endif %}</li>
   {% if forloop.last %}</ul>{% endif %}{% endfor %}
 </div>
 
-<h2 class="sec">Contact number</h2>
+<h2 class="sec">Contact Number</h2>
 <form method="post" action="{% url 'account-phone' %}" class="card row-form">
   {% csrf_token %}
   <div><label for="acc-phone">Phone</label><input type="tel" id="acc-phone" name="phone" value="{{ user.phone }}" maxlength="30" autocomplete="tel"></div>
@@ -50,5 +50,5 @@
 </form>
 
 <h2 class="sec">Password</h2>
-<div class="card"><a class="button" href="{% url 'password-change' %}">Change password</a></div>
+<div class="card"><a class="button" href="{% url 'password-change' %}">Change Password</a></div>
 {% endblock %}

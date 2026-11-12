@@ -41,15 +41,15 @@ STATUS_LABELS = [
     ("pending", "Pending"),
     ("rejected", "Rejected"),
     ("cancelled", "Cancelled"),
-    ("any", "Any status"),
+    ("any", "Any Status"),
 ]
-WHEN_LABELS = [("upcoming", "Upcoming and current"), ("past", "Past"), ("any", "Any time")]
+WHEN_LABELS = [("upcoming", "Upcoming and Current"), ("past", "Past"), ("any", "Any Time")]
 ACTION_LABELS = {
     "leave.book": "Booked",
-    "leave.modify": "Dates changed",
+    "leave.modify": "Dates Changed",
     "leave.approve": "Approved",
     "leave.reject": "Rejected",
-    "leave.revoke": "Approved leave rejected",
+    "leave.revoke": "Approved Leave Rejected",
     "leave.cancel": "Cancelled",
 }
 

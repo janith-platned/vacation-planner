@@ -33,7 +33,7 @@ def test_every_role_can_open_account_and_nav_links_to_it(client, techs, manager,
     for u in (techs[0], manager, admin_user):
         client.force_login(u)
         body = client.get(reverse("account")).content.decode()
-        assert "Contact number" in body and "Change password" in body
+        assert "Contact Number" in body and "Change Password" in body
         assert 'href="/account/"' in body or reverse("account") in body
     assert client.get(reverse("account")).status_code == 200
 

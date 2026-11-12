@@ -36,7 +36,7 @@
 <p><strong>{{ team.name }}</strong> <span class="muted">({{ team.region.name }})</span></p>
 {% endif %}
 
-<h2 class="sec">Team rules</h2>
+<h2 class="sec">Team Rules</h2>
 <form method="post" action="{% url 'save-rules' %}" class="card">
   {% csrf_token %}
   <input type="hidden" name="team" value="{{ team.pk }}">
@@ -50,13 +50,13 @@
     </div>
   </fieldset>
   <fieldset style="border:0;padding:0;margin:0">
-    <legend style="font-weight:600">Working days</legend>
+    <legend style="font-weight:600">Working Days</legend>
     <div class="checks">
       {% for num, name in weekdays %}<label><input type="checkbox" name="working_days" value="{{ num }}"{% if num in team.working_days %} checked{% endif %}> {{ name }}</label>{% endfor %}
     </div>
   </fieldset>
   <div class="row-form">
-    <div><label for="timezone">Time zone</label>
+    <div><label for="timezone">Time Zone</label>
       <select id="timezone" name="timezone">{% for tz in timezones %}<option value="{{ tz }}"{% if tz == team.timezone %} selected{% endif %}>{{ tz }}</option>{% endfor %}</select>
     </div>
     <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="manager_counts" value="1"{% if team.manager_counts_toward_headcount %} checked{% endif %}> The manager counts toward the team's headcount</label>
@@ -65,10 +65,10 @@
   {% if team.notify_employee_updates %}<input type="hidden" name="notify_employee" value="1">{% endif %}
   <label style="font-weight:400;display:inline-flex;gap:6px;align-items:center;margin:0 0 8px"><input type="checkbox" name="apply_to_leave_types" value="1"> Also set this approval limit on every leave type of this team</label>
   <p class="muted">Each leave type has its own approval limit (set under Leave types). Changing working days, holidays or the time zone does not move leave that is already booked.</p>
-  <button type="submit">Save rules</button>
+  <button type="submit">Save Rules</button>
 </form>
 
-<h2 class="sec">Resource roles</h2>
+<h2 class="sec">Resource Roles</h2>
 <div class="card">
   {% for r in roles %}
   <form method="post" action="{% url 'update-role' r.pk %}" class="row-form item{% if not r.active %} off{% endif %}">
@@ -81,13 +81,13 @@
 {% include "leave/_pager.html" with page_obj=role_page base_query=role_query param="rpage" label="Roles pages" %}
   <form method="post" action="{% url 'add-role' %}" class="row-form item">
     {% csrf_token %}<input type="hidden" name="team" value="{{ team.pk }}">
-    <div><label for="new-role">New role</label><input type="text" id="new-role" name="name" maxlength="100" required placeholder="e.g. Support"></div>
-    <button type="submit">Add role</button>
+    <div><label for="new-role">New Role</label><input type="text" id="new-role" name="name" maxlength="100" required placeholder="e.g. Support"></div>
+    <button type="submit">Add Role</button>
   </form>
   <p class="muted" style="margin-bottom:0">A role with active people cannot be switched off. Set a new role's floor on the Floors screen.</p>
 </div>
 
-<h2 class="sec">Leave types</h2>
+<h2 class="sec">Leave Types</h2>
 <div class="card">
   {% for lt in leave_types %}
   <details class="item{% if not lt.active %} off{% endif %}">
@@ -102,7 +102,7 @@
   {% endfor %}
 {% include "leave/_pager.html" with page_obj=type_page base_query=type_query param="lpage" label="Leave types pages" %}
   <details class="item">
-    <summary>Add a leave type</summary>
+    <summary>Add a Leave Type</summary>
     {% include "leave/_leave_type_form.html" with lt=None %}
   </details>
 </div>
@@ -117,7 +117,7 @@
   {% csrf_token %}<input type="hidden" name="team" value="{{ team.pk }}">
   <div><label for="h-date">Date</label><input type="date" id="h-date" name="date" required></div>
   <div><label for="h-name">Name</label><input type="text" id="h-name" name="name" maxlength="150" required placeholder="e.g. Canada Day"></div>
-  <button type="submit">Add holiday</button>
+  <button type="submit">Add Holiday</button>
 </form>
 {% if holidays %}
 <table class="list">
@@ -151,7 +151,7 @@
     <label><input type="checkbox" name="notify_employee" value="1"{% if team.notify_employee_updates %} checked{% endif %}> Email employees when a manager approves, rejects, changes, cancels or logs their leave</label>
   </div>
   <p class="muted">People without an email address are skipped. Emails contain only the person's own leave, never colleagues' names or counts.</p>
-  <button type="submit">Save notifications</button>
+  <button type="submit">Save Notifications</button>
 </form>
 {% endif %}
 <script>

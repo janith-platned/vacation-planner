@@ -149,7 +149,7 @@ def test_approver_shown_on_detail_and_in_the_table(client, manager, team, techs,
     services.decide_request(request=request, actor=manager, approve=True)
     client.force_login(manager)
     assert "by Mona Manager on" in client.get(reverse("request-detail", args=[request.pk])).content.decode()
-    table = client.get(reverse("approvals")).content.decode().split("All requests")[1]
+    table = client.get(reverse("approvals")).content.decode().split("All Requests")[1]
     assert "Approved by Mona Manager on" in table
 
 

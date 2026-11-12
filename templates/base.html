@@ -98,7 +98,7 @@
       {% if user.system_role == 'admin' %}<a href="{% url 'console' %}"{% if request.resolver_match.url_name == 'console' %} aria-current="page"{% endif %}>Console</a>{% endif %}
       <a href="{% url 'admin:index' %}">Admin</a>
       {% endif %}
-      <a href="{% url 'password-change' %}">Password</a>
+      <a href="{% url 'account' %}"{% if request.resolver_match.url_name == 'account' %} aria-current="page"{% endif %}>Account</a>
       <span class="muted">{{ user.get_full_name|default:user.username }}</span>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="link" type="submit">Sign out</button></form>
     </nav>

@@ -40,7 +40,7 @@ def _link(name: str) -> str:
     return settings.SITE_URL.rstrip("/") + reverse(name)
 
 
-def _queue(*, event: str, recipient, subject: str, body: str, request: LeaveRequest) -> None:
+def _queue(*, event: str, recipient, subject: str, body: str, request: LeaveRequest | None = None) -> None:
     if not recipient.is_active or not recipient.email:
         return  # nobody to write to; the screens still show the change
     note = Notification.objects.create(
@@ -132,3 +132,22 @@ def revoked(r: LeaveRequest, actor) -> None:
 
 def cancelled_by_manager(r: LeaveRequest, actor) -> None:
     _to_employee(r, actor, "leave.cancelled", "Your leave was cancelled.", r.cancel_reason)
+
+
+def email_change_requested(change) -> None:
+    if change.approver_id:
+        _queue(
+            event="email.requested", recipient=change.approver,
+            subject=f"{_name(change.user)} wants to change their email",
+            body=f"{_name(change.user)} asked to change their email address to {change.new_email}.\n\n"
+                 f"Approve or reject it here: {_link('approvals')}",
+        )
+
+
+def email_change_decided(change) -> None:
+    _queue(
+        event=f"email.{change.status}", recipient=change.user,
+        subject=f"Your email change was {change.status}",
+        body=f"Your request to change your email to {change.new_email} was {change.status}."
+             + (f"\n\nComment: {change.comment}" if change.comment else ""),
+    )

@@ -123,6 +123,11 @@ class User(AbstractUser):
         ResourceRole, null=True, blank=True, on_delete=models.SET_NULL, related_name="users"
     )
     must_change_password = models.BooleanField(default=True)
+    phone = models.CharField(max_length=30, blank=True)
+    # Who a manager reports to. Set by an administrator; approves this manager's email changes.
+    reports_to = models.ForeignKey(
+        "self", null=True, blank=True, on_delete=models.SET_NULL, related_name="direct_reports"
+    )
 
     def clean(self) -> None:
         super().clean()
@@ -141,3 +146,31 @@ class User(AbstractUser):
         if self.system_role == SystemRole.MANAGER:
             return self.team.manager_counts_toward_headcount
         return False
+
+
+class EmailChangeRequest(models.Model):
+    """A request to change the sign-in email, waiting for the reporting manager."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        APPROVED = "approved", "Approved"
+        REJECTED = "rejected", "Rejected"
+        CANCELLED = "cancelled", "Cancelled"
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="email_changes")
+    old_email = models.EmailField(blank=True)
+    new_email = models.EmailField()
+    approver = models.ForeignKey(User, null=True, on_delete=models.SET_NULL, related_name="+")
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    decided_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")
+    decided_at = models.DateTimeField(null=True, blank=True)
+    comment = models.CharField(max_length=500, blank=True)
+
+    class Meta:
+        ordering = ["-created_at", "-id"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["user"], condition=models.Q(status="pending"), name="one_pending_email_change_per_user"
+            )
+        ]

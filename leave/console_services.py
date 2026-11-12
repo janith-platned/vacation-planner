@@ -109,7 +109,31 @@ def update_team(*, actor: User, team: Team, name: str, manager: User, region: Re
     return team
 
 
-def add_manager(*, actor: User, username: str, first_name: str, last_name: str, email: str = "") -> tuple[User, str]:
+def set_reports_to(*, actor: User, manager: User, boss: User | None) -> User:
+    """Choose who a manager reports to (they approve this manager's email changes)."""
+    _require_admin(actor)
+    if manager.system_role != SystemRole.MANAGER:
+        raise InvalidRequest("Only managers report to someone.")
+    if boss is not None:
+        if boss.system_role not in (SystemRole.MANAGER, SystemRole.ADMIN) or not boss.is_active:
+            raise InvalidRequest("Choose an active manager or administrator.")
+        seen, cur = set(), boss
+        while cur is not None:  # walk up the chain: no one may end up reporting to themselves
+            if cur.pk == manager.pk:
+                raise InvalidRequest("That would make a reporting loop.")
+            if cur.pk in seen:
+                break
+            seen.add(cur.pk)
+            cur = cur.reports_to
+    before = manager.reports_to_id
+    with transaction.atomic():
+        manager.reports_to = boss
+        manager.save(update_fields=["reports_to"])
+        _audit(actor=actor, action="manager.reports_to", entity=manager, before={"reports_to": before}, after={"reports_to": boss.pk if boss else None})
+    return manager
+
+
+def add_manager(*, actor: User, username: str, first_name: str, last_name: str, email: str = "", reports_to: User | None = None) -> tuple[User, str]:
     """Create a manager account (no team yet) with a temporary password."""
     _require_admin(actor)
     username = username.strip()
@@ -121,6 +145,7 @@ def add_manager(*, actor: User, username: str, first_name: str, last_name: str, 
             user = User(
                 username=username, first_name=first_name.strip(), last_name=last_name.strip(), email=email.strip(),
                 system_role=SystemRole.MANAGER, must_change_password=True,
+                reports_to=reports_to if reports_to and reports_to.system_role in (SystemRole.MANAGER, SystemRole.ADMIN) else None,
             )
             user.full_clean(exclude=["password"])
             user.set_password(password)

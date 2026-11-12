@@ -65,7 +65,7 @@ def console_page(request):
     manager_page, manager_query = paginate(
         request,
         User.objects.filter(system_role__in=[SystemRole.MANAGER], is_active=True)
-        .annotate(team_count=Count("managed_teams"))
+        .select_related("reports_to").annotate(team_count=Count("managed_teams"))
         .order_by("first_name", "last_name", "username"),
         param="mpage",
         size=15,
@@ -186,6 +186,16 @@ def update_team(request, pk: int):
 
 @login_required
 @require_POST
+def set_reports_to(request, pk: int):
+    _admin_only(request)
+    manager = get_object_or_404(User, pk=pk, system_role=SystemRole.MANAGER)
+    boss = User.objects.filter(pk=_id(request.POST.get("reports_to"))).first()
+    _run(request, lambda: svc.set_reports_to(actor=request.user, manager=manager, boss=boss), "Reporting line saved.")
+    return redirect("console")
+
+
+@login_required
+@require_POST
 def add_manager(request):
     _admin_only(request)
     p = request.POST
@@ -194,6 +204,7 @@ def add_manager(request):
         lambda: svc.add_manager(
             actor=request.user, username=p.get("username", ""), first_name=p.get("first_name", ""),
             last_name=p.get("last_name", ""), email=p.get("email", ""),
+            reports_to=User.objects.filter(pk=_id(p.get("reports_to")), is_active=True).first(),
         ),
         "Manager added.",
     )

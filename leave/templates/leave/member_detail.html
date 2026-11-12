@@ -13,6 +13,7 @@
 {% block content %}
 <p><a href="{% url 'members' %}">&larr; Back to team</a></p>
 <h1>{{ p.get_full_name|default:p.username }} <span class="badge{% if p.is_active %} active{% endif %}">{% if p.is_active %}Active{% else %}Inactive{% endif %}</span></h1>
+<p class="muted">Contact number: {{ p.phone|default:"not provided" }}</p>
 <p class="muted">{{ p.username }} · {{ p.team.name }} ({{ p.team.region.name }}){% if p.must_change_password %} · has not yet set their own password{% endif %}</p>
 
 <form method="post" action="{% url 'update-member' p.pk %}" class="card">

@@ -189,3 +189,10 @@ def test_admin_can_assign_manager_to_team(client, admin_user, manager, other_man
     post(client, "console-update-team", {"name": team.name, "manager": other_manager.pk, "region": team.region_id}, team.pk)
     team.refresh_from_db()
     assert team.manager == other_manager
+
+
+def test_django_admin_link_is_not_shown(client, admin_user, manager, techs):
+    for u in (admin_user, manager, techs[0]):
+        client.force_login(u)
+        body = client.get(reverse("calendar")).content.decode()
+        assert "/admin/" not in body

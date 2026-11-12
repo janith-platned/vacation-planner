@@ -96,7 +96,6 @@
       <a href="{% url 'settings' %}"{% if request.resolver_match.url_name == 'settings' %} aria-current="page"{% endif %}>Settings</a>
       <a href="{% url 'audit' %}"{% if request.resolver_match.url_name == 'audit' %} aria-current="page"{% endif %}>Audit</a>
       {% if user.system_role == 'admin' %}<a href="{% url 'console' %}"{% if request.resolver_match.url_name == 'console' %} aria-current="page"{% endif %}>Console</a>{% endif %}
-      <a href="{% url 'admin:index' %}">Admin</a>
       {% endif %}
       <a href="{% url 'account' %}"{% if request.resolver_match.url_name == 'account' %} aria-current="page"{% endif %}>Account</a>
       <span class="muted">{{ user.get_full_name|default:user.username }}</span>

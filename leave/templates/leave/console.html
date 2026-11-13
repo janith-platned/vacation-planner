@@ -106,6 +106,10 @@
         <select id="rt-{{ m.pk }}" name="reports_to"><option value="">Nobody</option>{% for b in admins_and_managers %}{% if b.pk != m.pk %}<option value="{{ b.pk }}"{% if b.pk == m.reports_to_id %} selected{% endif %}>{{ b.get_full_name|default:b.username }}</option>{% endif %}{% endfor %}</select></div>
       <button type="submit" class="secondary">Save<span class="sr-only"> reporting line for {{ m.get_full_name|default:m.username }}</span></button>
     </form>
+    <form method="post" action="{% url 'console-set-role' m.pk %}" class="inline" style="margin-top:6px" onsubmit="return confirm('Make {{ m.get_full_name|default:m.username|escapejs }} an administrator? They will see and manage every team.');">
+      {% csrf_token %}<input type="hidden" name="role" value="admin">
+      <button class="link" type="submit">Make Administrator<span class="sr-only"> {{ m.get_full_name|default:m.username }}</span></button>
+    </form>
   </div>
   {% empty %}<p class="muted" style="margin:0">No managers yet.</p>{% endfor %}
 {% include "leave/_pager.html" with page_obj=manager_page base_query=manager_query param="mpage" label="Managers pages" %}
@@ -121,6 +125,23 @@
       <button type="submit">Add Manager</button>
     </form>
   </details>
+</div>
+
+<h2 class="sec">Administrators</h2>
+<div class="card">
+  {% for a in admins %}
+  <div class="item">
+    <span><strong>{{ a.get_full_name|default:a.username }}</strong> <span class="muted">{{ a.username }}{% if a.pk == request.user.pk %} · you{% endif %}</span></span>
+    {% if a.pk != request.user.pk %}
+    <form method="post" action="{% url 'console-set-role' a.pk %}" class="inline" onsubmit="return confirm('Make {{ a.get_full_name|default:a.username|escapejs }} a manager? They will lose access to the Administrator Console and to other managers\' teams.');">
+      {% csrf_token %}<input type="hidden" name="role" value="manager">
+      <button class="link" type="submit">Make Manager<span class="sr-only"> {{ a.get_full_name|default:a.username }}</span></button>
+    </form>
+    {% endif %}
+  </div>
+  {% empty %}<p class="muted" style="margin:0">No administrators.</p>{% endfor %}
+{% include "leave/_pager.html" with page_obj=admin_page base_query=admin_query param="apage" label="Administrators pages" %}
+  <p class="muted" style="margin-bottom:0">To make someone an administrator, use "Make Administrator" on their entry under Managers. There must always be at least one active administrator, and you cannot change your own role.</p>
 </div>
 
 <h2 class="sec">Regions</h2>

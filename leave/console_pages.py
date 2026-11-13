@@ -71,6 +71,12 @@ def console_page(request):
         size=15,
     )
     managers = list(manager_page.object_list)
+    admin_page, admin_query = paginate(
+        request,
+        User.objects.filter(system_role=SystemRole.ADMIN, is_active=True).order_by("first_name", "last_name", "username"),
+        param="apage",
+        size=15,
+    )
     region_page, region_query = paginate(request, Region.objects.annotate(n=Count("teams")).order_by("name"), param="rpage", size=10)
     department_page, department_query = paginate(request, Department.objects.annotate(n=Count("users")).order_by("name"), param="dpage", size=10)
     return render(
@@ -79,6 +85,8 @@ def console_page(request):
         {
             "teams": teams,
             "managers": managers,
+            "admins": admin_page.object_list,
+            "admin_page": admin_page, "admin_query": admin_query,
             "regions": region_page.object_list,
             "departments": department_page.object_list,
             "all_regions": Region.objects.all(),
@@ -191,6 +199,17 @@ def set_reports_to(request, pk: int):
     manager = get_object_or_404(User, pk=pk, system_role=SystemRole.MANAGER)
     boss = User.objects.filter(pk=_id(request.POST.get("reports_to"))).first()
     _run(request, lambda: svc.set_reports_to(actor=request.user, manager=manager, boss=boss), "Reporting line saved.")
+    return redirect("console")
+
+
+@login_required
+@require_POST
+def set_role(request, pk: int):
+    _admin_only(request)
+    person = get_object_or_404(User, pk=pk, system_role__in=[SystemRole.MANAGER, SystemRole.ADMIN])
+    role = request.POST.get("role", "")
+    label = SystemRole(role).label if role in SystemRole.values else ""
+    _run(request, lambda: svc.set_system_role(actor=request.user, person=person, role=role), f"{_person(person)} is now {label}.")
     return redirect("console")
 
 

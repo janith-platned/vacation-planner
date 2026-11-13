@@ -16,6 +16,7 @@ urlpatterns = [
     path("console/teams/add/", console_pages.add_team, name="console-add-team"),
     path("console/teams/<int:pk>/", console_pages.update_team, name="console-update-team"),
     path("console/managers/<int:pk>/reports-to/", console_pages.set_reports_to, name="console-reports-to"),
+    path("console/users/<int:pk>/role/", console_pages.set_role, name="console-set-role"),
     path("console/managers/add/", console_pages.add_manager, name="console-add-manager"),
     path("console/regions/add/", console_pages.add_region, name="console-add-region"),
     path("console/regions/<int:pk>/", console_pages.rename_region, name="console-rename-region"),

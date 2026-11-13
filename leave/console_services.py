@@ -133,6 +133,41 @@ def set_reports_to(*, actor: User, manager: User, boss: User | None) -> User:
     return manager
 
 
+def set_system_role(*, actor: User, person: User, role: str) -> User:
+    """Promote a manager to administrator, or return an administrator to manager."""
+    _require_admin(actor)
+    if role not in (SystemRole.MANAGER, SystemRole.ADMIN):
+        raise InvalidRequest("Choose Manager or Administrator.")
+    if person.pk == actor.pk:
+        raise InvalidRequest("You cannot change your own role.")
+    with transaction.atomic():
+        locked = User.objects.select_for_update().get(pk=person.pk)
+        if locked.system_role not in (SystemRole.MANAGER, SystemRole.ADMIN):
+            raise InvalidRequest("Only managers and administrators can be changed here.")
+        if not locked.is_active:
+            raise InvalidRequest("Reactivate the account first.")
+        if locked.system_role == role:
+            return locked
+        if locked.system_role == SystemRole.ADMIN:
+            others = list(
+                User.objects.select_for_update()
+                .filter(system_role=SystemRole.ADMIN, is_active=True)
+                .exclude(pk=locked.pk)
+                .values_list("pk", flat=True)
+            )
+            if not others:
+                raise InvalidRequest("There must always be at least one active administrator.")
+        before = locked.system_role
+        locked.system_role = role
+        fields = ["system_role"]
+        if role == SystemRole.ADMIN and locked.reports_to_id:
+            locked.reports_to = None  # administrators have no approving manager
+            fields.append("reports_to")
+        locked.save(update_fields=fields)
+        _audit(actor=actor, action="user.role", entity=locked, before={"system_role": before}, after={"system_role": role})
+    return locked
+
+
 def add_manager(*, actor: User, username: str, first_name: str, last_name: str, email: str = "", reports_to: User | None = None) -> tuple[User, str]:
     """Create a manager account (no team yet) with a temporary password."""
     _require_admin(actor)
